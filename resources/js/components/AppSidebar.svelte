@@ -64,6 +64,11 @@
             href: '/admin/roles',
             icon: LayoutGrid,
         },
+        {
+            title: 'Pokémon Management',
+            href: '/admin/pokemon',
+            icon: LayoutGrid,
+        }
     ];
 
     // ----------------------------
