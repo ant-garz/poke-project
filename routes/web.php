@@ -4,24 +4,20 @@ use Illuminate\Support\Facades\Route;
 
 
 
-
 Route::inertia('/', 'Welcome')->name('home');
 
-Route::middleware(['auth', 'verified'])
-    ->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
-        // User area
-        Route::inertia('/dashboard', 'Dashboard')
-            ->name('dashboard');
+    Route::inertia('/dashboard', 'Dashboard')
+        ->name('dashboard');
 
-        // Admin area
-        Route::prefix('admin')
+    Route::prefix('admin')
         ->name('admin.')
         ->middleware(['role:admin'])
         ->group(function () {
 
-            Route::inertia('/dashboard', 'admin/Dashboard')
-                ->name('dashboard');
+            Route::inertia('/', 'admin/Dashboard')
+                ->name('index');
 
             Route::inertia('/users', 'admin/Users')
                 ->middleware('permission:view users')
@@ -31,18 +27,20 @@ Route::middleware(['auth', 'verified'])
                 ->middleware('permission:manage roles')
                 ->name('roles');
 
-            // pokemon admin routes
-            Route::inertia('/pokemon', 'admin/pokemon/Index')
-                ->middleware('permission:manage pokemon')
-                ->name('admin.pokemon');
+            Route::prefix('pokemon')->group(function () {
 
-            Route::inertia('/pokemon/import', 'admin/pokemon/Import')
-                ->middleware('permission:manage pokemon')
-                ->name('admin.pokemon.import');
+                Route::inertia('/', 'admin/pokemon/Index')
+                    ->middleware('permission:manage pokemon')
+                    ->name('pokemon.index');
 
-            Route::inertia('/pokemon/manage', 'admin/pokemon/Manage')
-                ->middleware('permission:manage pokemon')
-                ->name('admin.pokemon.manage');
+                Route::inertia('/import', 'admin/pokemon/Import')
+                    ->middleware('permission:manage pokemon')
+                    ->name('pokemon.import');
+
+                Route::inertia('/manage', 'admin/pokemon/Manage')
+                    ->middleware('permission:manage pokemon')
+                    ->name('pokemon.manage');
+            });
         });
 });
 

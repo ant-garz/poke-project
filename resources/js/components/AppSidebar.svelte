@@ -32,8 +32,7 @@
     // AUTH
     // ----------------------------
     const { isAdmin } = useAuth();
-    const showAdmin = isAdmin(); //
-    console.log(isAdmin)
+    const showAdmin = isAdmin();
     // ----------------------------
     // BASE NAV (all users)
     // ----------------------------
@@ -51,17 +50,7 @@
     const adminNavItems: NavItem[] = [
         {
             title: 'Admin Dashboard',
-            href: '/admin/dashboard',
-            icon: LayoutGrid,
-        },
-        {
-            title: 'Users',
-            href: '/admin/users',
-            icon: LayoutGrid,
-        },
-        {
-            title: 'Roles',
-            href: '/admin/roles',
+            href: '/admin',
             icon: LayoutGrid,
         },
         {
