@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Jobs;
 
 use App\Models\Pokemon;
@@ -13,14 +14,28 @@ class EnrichPokemonFromExternalApisJob implements ShouldQueue
 
     public function handle(): void
     {
-        $pokemon = Pokemon::findOrFail($this->pokemonId);
+        $pokemon = Pokemon::with('types')->findOrFail($this->pokemonId);
 
-        // prevent re-processing later
-        if ($pokemon->is_enriched ?? false) {
+        /**
+         * 1. Prevent duplicate enrichment runs
+         */
+        if ($pokemon->is_enriched) {
             return;
         }
 
+        /**
+         * 2. Mark as processing (optional but recommended)
+         */
+        $pokemon->update([
+            'is_enriched' => false, // still processing
+        ]);
+
+        /**
+         * 3. Dispatch external API fetchers
+         * (each job handles its own rate limits + retries)
+         */
         FetchPokeApiDataJob::dispatch($pokemon->id);
+
         FetchTcgdexDataJob::dispatch($pokemon->id);
     }
 }
