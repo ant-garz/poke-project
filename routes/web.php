@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'Welcome')->name('home');
 
 // In order to access any route other than the landing page, the user must be logged in and have a verified email
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth',])->group(function () {
 
     Route::inertia('/dashboard', 'Dashboard')
         ->name('dashboard');
@@ -15,7 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // "manage" is an umbrella permission name to represent full CRUD (Create, Read, Update, Delete) privileges over a specific resource or module
     Route::prefix('admin')
         ->name('admin.')
-        ->middleware(['role:admin'])
+        ->middleware(['role:admin','verified'])
         ->group(function () {
 
             Route::inertia('/', 'admin/Dashboard')
@@ -38,6 +38,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 Route::inertia('/import', 'admin/pokemon/Import')
                     ->middleware('permission:manage pokemon')
                     ->name('pokemon.import');
+
+                Route::inertia('/batches', 'admin/pokemon/Batches')
+                    ->middleware('permission:manage pokemon')
+                    ->name('pokemon.batches');
+
+                Route::inertia('/batches/{batch}', 'admin/pokemon/Batch')
+                    ->middleware('permission:manage pokemon')
+                    ->name('pokemon.batches.show');
 
                 Route::inertia('/manage', 'admin/pokemon/Manage')
                     ->middleware('permission:manage pokemon')

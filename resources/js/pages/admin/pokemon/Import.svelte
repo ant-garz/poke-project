@@ -254,7 +254,7 @@
         </div>
     {/if}
 
-    {#if preview.length > 0}
+    {#if preview.length > 0 && success === null && error === null}
         <div class="rounded-lg border">
             <div class="border-b p-3 text-sm font-medium">
                 Import Preview ({preview.length} rows)
@@ -281,7 +281,7 @@
         <button
             class="rounded-md border px-4 py-2 text-sm hover:bg-green-100 dark:hover:bg-green-900/30 disabled:opacity-50"
             on:click={upload}
-            disabled={uploading || !parsed || preview.length === 0}
+            disabled={uploading || !parsed || preview.length === 0 || success !== null || error !== null}
         >
             {#if uploading}
                 Uploading...
@@ -293,6 +293,7 @@
         <button
             class="rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
             on:click={clear}
+            disabled={success !== null || error !== null}
         >
             Clear
         </button>

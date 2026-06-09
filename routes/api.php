@@ -17,7 +17,7 @@ Route::prefix('v1')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1/user')
-    ->middleware(['web','auth:web','role:user'])
+    ->middleware(['web','auth:web','role:user','verified'])
     ->group(function () {
         require __DIR__ . '/api/user.php';
     });
@@ -28,7 +28,7 @@ Route::prefix('v1/user')
 |--------------------------------------------------------------------------
 */
 Route::prefix('v1/admin')
-    ->middleware([ 'web','auth:web', 'role:admin'])
+    ->middleware([ 'web','auth:web', 'role:admin','verified'])
     ->group(function () {
         require __DIR__ . '/api/admin.php';
     });
