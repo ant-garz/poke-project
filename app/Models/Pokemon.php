@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Pokemon extends Model
 {
@@ -76,5 +77,12 @@ class Pokemon extends Model
     public function variants(): HasMany
     {
         return $this->hasMany(self::class, 'base_pokemon_id');
+    }
+
+    public function types(): BelongsToMany
+    {
+        return $this->belongsToMany(Type::class, 'pokemon_type')
+            ->withPivot('slot')
+            ->orderBy('pokemon_type.slot');
     }
 }
