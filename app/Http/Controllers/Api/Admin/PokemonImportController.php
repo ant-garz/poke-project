@@ -13,6 +13,13 @@ class PokemonImportController extends Controller
         private PokemonImportService $service
     ) {}
 
+    public function index()
+    {
+        return \App\Models\PokemonImportBatch::query()
+            ->latest()
+            ->paginate(20);
+    }
+
     /**
      * POST /pokemon/import
      * Upload CSV and kick off ingestion pipeline
@@ -47,6 +54,27 @@ class PokemonImportController extends Controller
             'failed_rows' => $batch->failed_rows,
             'meta' => $batch->meta,
             'created_at' => $batch->created_at,
+        ]);
+    }
+
+    public function detail(\App\Models\PokemonImportBatch $batch)
+    {
+        return response()->json([
+            'id' => $batch->id,
+            'status' => $batch->status,
+
+            'original_filename' => $batch->original_filename,
+            'file_path' => $batch->file_path,
+
+            'total_rows' => $batch->total_rows,
+            'processed_rows' => $batch->processed_rows,
+            'failed_rows' => $batch->failed_rows,
+
+            'progress' => $batch->progress(),
+
+            'meta' => $batch->meta,
+            'created_at' => $batch->created_at,
+            'updated_at' => $batch->updated_at,
         ]);
     }
 }

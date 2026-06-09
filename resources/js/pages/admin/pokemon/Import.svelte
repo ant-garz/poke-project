@@ -1,6 +1,10 @@
 <script lang="ts">
     let file: File | null = null;
 
+    let interval: any = null;
+    let progress: number = 0;
+    let status: string = '';
+
     let uploading = false;
     let error: string | null = null;
     let success: string | null = null;
@@ -77,6 +81,8 @@
             batchId = data.batch_id;
             success = `Import started successfully (Batch #${batchId})`;
 
+            startPolling(batchId);
+
             // reset file after successful upload
             file = null;
 
@@ -90,6 +96,25 @@
         } finally {
             uploading = false;
         }
+    }
+
+    async function startPolling(id: number) {
+        if (interval) clearInterval(interval);
+
+        interval = setInterval(async () => {
+            const res = await fetch(`/api/v1/admin/pokemon/import/${id}`, {
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            progress = data.progress;
+            status = data.status;
+
+            if (status === 'completed' || status === 'failed') {
+                clearInterval(interval);
+            }
+        }, 1500);
     }
 
     function clear() {
@@ -183,10 +208,49 @@
     {/if}
 
     {#if batchId}
-        <div class="text-sm text-gray-500">
-            Batch ID: <strong>{batchId}</strong>
-            <span class="ml-2 text-gray-400">(progress tracking next step)</span
+        <div class="rounded-md border p-3 text-sm space-y-2">
+
+            <div>
+                Batch ID: <strong>{batchId}</strong>
+            </div>
+
+            <div>
+                Status: <strong>{status}</strong>
+            </div>
+
+            <div class="w-full bg-gray-200 rounded h-2">
+                <div
+                    class="bg-green-500 h-2 rounded"
+                    style="width: {progress}%"
+                ></div>
+            </div>
+
+            <div class="text-xs text-gray-500">
+                {progress}% complete
+            </div>
+
+        </div>
+
+         <div class="rounded-md border border-blue-500/20 bg-blue-500/10 p-3 text-sm text-blue-600 dark:text-blue-400 space-y-1">
+
+        <div class="font-medium">
+            Import in progress
+        </div>
+
+        <div class="text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+            You can safely leave this page. The import will continue running in the background.
+        </div>
+
+        <div class="text-xs text-gray-500">
+            You can check progress anytime in the
+            <a
+                href="/admin/pokemon/batches"
+                class="underline hover:text-blue-500"
             >
+                batch history page
+            </a>.
+        </div>
+
         </div>
     {/if}
 
