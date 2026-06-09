@@ -13,7 +13,11 @@ use App\Http\Controllers\Api\Admin\PokemonManagementController;
 
 Route::post('/pokemon/import', [PokemonImportController::class, 'store']);
 
+Route::get('/pokemon/import/{batch}', [PokemonImportController::class, 'show']);
+
 Route::post('/pokemon/reprocess', [PokemonManagementController::class, 'reprocess']);
+
+Route::post('/pokemon/sync/{pokemon}', [PokemonManagementController::class, 'sync']);
 
 Route::patch('/pokemon/{pokemon}', [PokemonManagementController::class, 'update']);
 
