@@ -10,6 +10,11 @@
             href: '/admin/pokemon/import',
             description: 'Upload CSV and bulk import Pokémon data.',
         },
+        {
+            title: 'Batch Import History',
+            href: '/admin/pokemon/batches',
+            description: 'View results of previous batch imports of Pokémon data.',
+        },
     ];
 </script>
 

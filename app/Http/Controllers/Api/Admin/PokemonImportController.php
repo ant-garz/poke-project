@@ -27,16 +27,25 @@ class PokemonImportController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
         ]);
 
-        $batch = $this->service->createImportFromFile(
-            $request->file('file')
-        );
+        // 1. Store file properly in storage/app/imports/pokemon
+        $path = $request->file('file')->store('imports/pokemon');
+
+        // 2. Create batch record
+        $batch = PokemonImportBatch::create([
+            'file_path' => $path,
+            'status' => 'pending',
+            'progress' => 0,
+        ]);
+
+        // 3. Kick off job
+        ImportPokemonCsvJob::dispatch($batch->id);
 
         return response()->json([
             'batch_id' => $batch->id,
-            'status' => $batch->status,
+            'status' => 'started',
         ]);
     }
 

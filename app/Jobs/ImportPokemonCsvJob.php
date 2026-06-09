@@ -27,13 +27,30 @@ class ImportPokemonCsvJob implements ShouldQueue
 
     public function handle(): void
     {
-        $file = storage_path("app/{$this->path}");
+        $batch = PokemonImportBatch::findOrFail($this->batchId);
 
-        $rows = array_map('str_getcsv', file($file));
-        array_shift($rows); // remove header
-
-        foreach ($rows as $row) {
-            ParsePokemonCsvRowJob::dispatch($row);
+        // 1. Get file from storage
+        if (!Storage::exists($batch->file_path)) {
+            throw new \Exception("CSV file not found: {$batch->file_path}");
         }
+
+        $contents = Storage::get($batch->file_path);
+
+        // 2. Convert to lines
+        $lines = array_filter(explode("\n", trim($contents)));
+
+        $headers = str_getcsv(array_shift($lines));
+
+        foreach ($lines as $index => $line) {
+            $row = array_combine($headers, str_getcsv($line));
+
+            // dispatch row job (your existing pipeline)
+            ParsePokemonCsvRowJob::dispatch($batch->id, $row);
+        }
+
+        $batch->update([
+            'status' => 'processing',
+            'total_rows' => count($lines),
+        ]);
     }
 }

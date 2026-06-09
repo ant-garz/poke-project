@@ -72,8 +72,11 @@
             });
 
             if (!res.ok) {
-                const message = await res.text();
-                throw new Error(message || 'Upload failed');
+                const data = await res.json().catch(() => null);
+
+                throw new Error(
+                    data?.message ?? 'Upload failed'
+                );
             }
 
             const data = await res.json();
@@ -279,7 +282,7 @@
     <!-- Actions -->
     <div class="flex gap-2">
         <button
-            class="rounded-md border px-4 py-2 text-sm hover:bg-green-100 dark:hover:bg-green-900/30 disabled:opacity-50"
+            class="rounded-md border px-4 py-2 text-sm hover:bg-green-100 dark:hover:bg-green-900/30 enabled:hover:cursor-pointer disabled:opacity-50"
             on:click={upload}
             disabled={uploading || !parsed || preview.length === 0 || success !== null || error !== null}
         >
@@ -291,7 +294,7 @@
         </button>
 
         <button
-            class="rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 enabled:hover:cursor-pointer disabled:opacity-50"
             on:click={clear}
             disabled={success !== null || error !== null}
         >

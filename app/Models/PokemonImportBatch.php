@@ -26,6 +26,18 @@ class PokemonImportBatch extends Model
         ];
     }
 
+    public function getProgressAttribute(): float
+    {
+        if (!$this->total_rows) {
+            return 0;
+        }
+
+        return round(
+            (($this->processed_rows + $this->failed_rows) / $this->total_rows) * 100,
+            2
+        );
+    }
+
     /*
     |-----------------------------
     | State helpers
