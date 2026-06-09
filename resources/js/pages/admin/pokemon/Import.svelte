@@ -1,47 +1,236 @@
 <script lang="ts">
-    console.log('admin pokemon import');
+    let file: File | null = null;
+
+    let uploading = false;
+    let error: string | null = null;
+    let success: string | null = null;
+
+    let batchId: number | null = null;
+
+    let preview: Record<string, string>[] = [];
+    let parsed = false;
+
+    function handleFileSelect(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const selected = target.files?.[0];
+
+        if (!selected) return;
+
+        error = null;
+        success = null;
+        preview = [];
+        parsed = false;
+
+        if (!selected.name.toLowerCase().endsWith('.csv')) {
+            error = 'Only CSV files are allowed';
+            return;
+        }
+
+        if (selected.size > 5 * 1024 * 1024) {
+            error = 'File too large (max 5MB)';
+            return;
+        }
+
+        file = selected;
+
+        // 👇 parse file for preview
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const text = e.target?.result as string;
+
+            preview = parseCSV(text);
+            parsed = true;
+        };
+
+        reader.readAsText(selected);
+    }
+
+    async function upload() {
+        if (!file || !parsed || preview.length === 0) {
+            error = 'Please select and preview a valid CSV first';
+            return;
+        }
+
+        uploading = true;
+        error = null;
+        success = null;
+        batchId = null;
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const res = await fetch('/api/v1/admin/pokemon/import', {
+                method: 'POST',
+                body: formData,
+                credentials: 'include',
+            });
+
+            if (!res.ok) {
+                const message = await res.text();
+                throw new Error(message || 'Upload failed');
+            }
+
+            const data = await res.json();
+
+            batchId = data.batch_id;
+            success = `Import started successfully (Batch #${batchId})`;
+
+            // reset file after successful upload
+            file = null;
+
+            // reset input visually
+            const input = document.getElementById(
+                'csvInput',
+            ) as HTMLInputElement;
+            if (input) input.value = '';
+        } catch (e: any) {
+            error = e?.message ?? 'Something went wrong during upload';
+        } finally {
+            uploading = false;
+        }
+    }
+
+    function clear() {
+        file = null;
+        error = null;
+        success = null;
+        batchId = null;
+
+        const input = document.getElementById('csvInput') as HTMLInputElement;
+        if (input) input.value = '';
+    }
+
+    function parseCSV(text: string) {
+        const lines = text
+            .trim()
+            .split('\n')
+            .filter(Boolean);
+
+        const headers = lines[0]
+            .split(',')
+            .map(h => h.trim());
+
+        return lines.slice(1).map(line => {
+            const values = line
+                .split(',')
+                .map(v => v.trim());
+
+            const row: Record<string, string> = {};
+
+            headers.forEach((header, i) => {
+                row[header] = values[i] ?? '';
+            });
+
+            return row;
+        });
+    }
 </script>
 
-    <div class="space-y-6">
-        <div>
-            <h1 class="text-2xl font-semibold">Import Pokémon</h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Placeholder CSV import area. Upload + parsing not implemented yet.
-            </p>
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-2xl font-semibold">Import Pokémon</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Upload a CSV file to start the ingestion pipeline.
+        </p>
+    </div>
+
+    <!-- Drop / Upload Area -->
+    <div class="rounded-lg border border-dashed p-10 text-center">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            Drag & drop CSV file here (or click select)
+        </p>
+
+        <input
+            id="csvInput"
+            type="file"
+            accept=".csv"
+            class="hidden"
+            on:change={handleFileSelect}
+        />
+
+        <button
+            class="mt-4 rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+            on:click={() => document.getElementById('csvInput')?.click()}
+        >
+            Select File
+        </button>
+
+        {#if file}
+            <div class="mt-3 text-sm text-gray-600 dark:text-gray-300">
+                Selected: <strong>{file.name}</strong>
+            </div>
+        {/if}
+    </div>
+
+    <!-- Status Messages -->
+    {#if error}
+        <div
+            class="rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500"
+        >
+            {error}
         </div>
+    {/if}
 
-        <!-- Drop zone mock -->
-        <div class="rounded-lg border border-dashed p-10 text-center">
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-                Drag & drop CSV file here (UI only)
-            </p>
-
-            <button class="mt-4 rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-                Select File
-            </button>
+    {#if success}
+        <div
+            class="rounded-md border border-green-500/30 bg-green-500/10 p-3 text-sm text-green-500"
+        >
+            {success}
         </div>
+    {/if}
 
-        <!-- Mock preview -->
+    {#if batchId}
+        <div class="text-sm text-gray-500">
+            Batch ID: <strong>{batchId}</strong>
+            <span class="ml-2 text-gray-400">(progress tracking next step)</span
+            >
+        </div>
+    {/if}
+
+    {#if preview.length > 0}
         <div class="rounded-lg border">
             <div class="border-b p-3 text-sm font-medium">
-                Import Preview (Mock)
+                Import Preview ({preview.length} rows)
             </div>
 
-            <div class="p-4 space-y-2 text-sm">
-                <div>Row 1 → Pikachu</div>
-                <div>Row 2 → Charizard</div>
-                <div>Row 3 → Bulbasaur</div>
+            <div class="p-4 space-y-2 text-sm max-h-64 overflow-auto">
+                {#each preview as row, i}
+                    <div class="rounded border p-2 flex justify-between">
+                        <span>
+                            Row {i + 1} → {row.Name}
+                        </span>
+
+                        <span class="text-gray-500">
+                            #{row.Number}
+                        </span>
+                    </div>
+                {/each}
             </div>
         </div>
+    {/if}
 
-        <!-- Actions -->
-        <div class="flex gap-2">
-            <button class="rounded-md border px-4 py-2 text-sm hover:bg-green-100 dark:hover:bg-green-900/30">
-                Simulate Import
-            </button>
+    <!-- Actions -->
+    <div class="flex gap-2">
+        <button
+            class="rounded-md border px-4 py-2 text-sm hover:bg-green-100 dark:hover:bg-green-900/30 disabled:opacity-50"
+            on:click={upload}
+            disabled={uploading || !parsed || preview.length === 0}
+        >
+            {#if uploading}
+                Uploading...
+            {:else}
+                Start Import
+            {/if}
+        </button>
 
-            <button class="rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-                Clear
-            </button>
-        </div>
+        <button
+            class="rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+            on:click={clear}
+        >
+            Clear
+        </button>
     </div>
+</div>
