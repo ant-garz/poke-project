@@ -91,11 +91,22 @@ class Pokemon extends Model
         return $this->hasMany(self::class, 'base_pokemon_id');
     }
 
-    public function types(): BelongsToMany
+    public function primaryType()
     {
-        return $this->belongsToMany(Type::class, 'pokemon_type')
-            ->withPivot('slot')
-            ->orderBy('pokemon_type.slot');
+        return $this->belongsTo(Type::class, 'primary_type_id');
+    }
+
+    public function secondaryType()
+    {
+        return $this->belongsTo(Type::class, 'secondary_type_id');
+    }
+
+    public function getTypesAttribute()
+    {
+        return collect([
+            $this->primaryType,
+            $this->secondaryType,
+        ])->filter()->values();
     }
 
     public function cards()

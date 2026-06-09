@@ -3,6 +3,8 @@
 namespace App\Services\ExternalApi;
 
 use TCGdex\TCGdex;
+
+use TCGdex\Query;
 use Illuminate\Support\Facades\RateLimiter;
 
 class TcgdexClient
@@ -14,27 +16,41 @@ class TcgdexClient
         $this->sdk = new TCGdex("en");
     }
 
+    private function throttle(): void
+    {
+        while (! RateLimiter::attempt('tcgdex', 20, fn () => true)) {
+            usleep(250000); // 0.25s backoff
+        }
+    }
+
+    public function findCardByName(string $name)
+{
+    $this->throttle();
+
+    $query = Query::create()
+        ->contains('name', $name)
+        ->paginate(1, 1); // IMPORTANT: 1 result only
+
+    $result = $this->sdk->card->list($query);
+
+    if (empty($result) || !isset($result[0])) {
+        return null;
+    }
+
+    return $result[0];
+}
+
     public function getCard(string $cardId)
     {
-        return RateLimiter::attempt(
-            'tcgdex',
-            1,
-            function () use ($cardId) {
-                return $this->sdk->card->get($cardId);
-            },
-            2
-        );
+        $this->throttle();
+
+        return $this->sdk->card->get($cardId);
     }
 
     public function getSet(string $setId)
     {
-        return RateLimiter::attempt(
-            'tcgdex',
-            1,
-            function () use ($setId) {
-                return $this->sdk->set->get($setId);
-            },
-            2
-        );
+        $this->throttle();
+
+        return $this->sdk->set->get($setId);
     }
 }

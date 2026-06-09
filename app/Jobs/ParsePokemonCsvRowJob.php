@@ -27,6 +27,10 @@ class ParsePokemonCsvRowJob implements ShouldQueue
             $number = $this->row['Number'] ?? null;
             $name = $this->row['Name'] ?? null;
 
+            if (!$number || !$name) {
+                throw new \Exception("Missing required CSV fields");
+            }
+
             $type1 = $this->row['Type 1'] ?? null;
             $type2 = $this->row['Type 2'] ?? null;
 
@@ -54,10 +58,14 @@ class ParsePokemonCsvRowJob implements ShouldQueue
 
             $typeIds = collect([$type1, $type2])
                 ->filter()
-                ->map(fn ($typeName) => Type::firstOrCreate([
-                    'name' => ucfirst(trim($typeName)),
-                    'slug' => Str::slug($typeName),
-                ]))
+                ->map(function ($typeName) {
+                    $typeName = trim($typeName);
+
+                    return Type::firstOrCreate(
+                        ['slug' => Str::slug($typeName)],
+                        ['name' => ucfirst(strtolower($typeName))]
+                    );
+                })
                 ->pluck('id')
                 ->values()
                 ->all();
@@ -80,9 +88,6 @@ class ParsePokemonCsvRowJob implements ShouldQueue
             ]);
 
             $batch?->increment('failed_rows');
-
-            // optionally:
-            // throw $e;
         }
     }
 }
