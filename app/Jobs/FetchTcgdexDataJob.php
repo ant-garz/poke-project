@@ -5,7 +5,7 @@ namespace App\Jobs;
 use App\Models\Pokemon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Http;
+use App\Services\ExternalApi\TcgdexClient;
 
 class FetchTcgdexDataJob implements ShouldQueue
 {
@@ -13,22 +13,25 @@ class FetchTcgdexDataJob implements ShouldQueue
 
     public function __construct(public int $pokemonId) {}
 
-    public function handle(): void
+    public function handle(TcgdexClient $client): void
     {
         $pokemon = Pokemon::findOrFail($this->pokemonId);
 
-        $response = Http::get("https://api.tcgdex.net/v2/en/cards?name=" . urlencode($pokemon->name));
+        $cardId = $pokemon->tcg_card_id ?? null;
 
-        if ($response->failed()) {
+        if (!$cardId) {
             return;
         }
 
-        $cards = $response->json();
+        $card = $client->getCard($cardId);
+
+        if (!$card) {
+            $this->release(5);
+            return;
+        }
 
         $pokemon->update([
-            'raw_tcgdex' => $cards, // optional JSON column
+            'tcg_data' => json_encode($card),
         ]);
-
-        // later: create Card models here
     }
 }

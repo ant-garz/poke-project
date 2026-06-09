@@ -180,7 +180,7 @@
         />
 
         <button
-            class="mt-4 rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+            class="mt-4 rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
             on:click={() => document.getElementById('csvInput')?.click()}
             disabled={success !== null || error !== null}
         >

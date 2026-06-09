@@ -8,6 +8,7 @@ use Illuminate\Foundation\Queue\Queueable;
 use App\Models\PokemonImportBatch;
 use App\Jobs\ParsePokemonCsvRowJob;
 use App\Enums\PokemonImportBatchStatus;
+use App\Jobs\FinalizePokemonImportBatchJob;
 
 /**
  * This kicks off main workflow
@@ -27,7 +28,7 @@ class ImportPokemonCsvJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public string $path) {}
+    public function __construct(public int $batchId) {}
 
     public function handle(): void
     {
@@ -53,5 +54,8 @@ class ImportPokemonCsvJob implements ShouldQueue
 
             ParsePokemonCsvRowJob::dispatch($batch->id, $row);
         }
+
+        FinalizePokemonImportBatchJob::dispatch($batch->id)
+            ->delay(now()->addSeconds(5));
     }
 }

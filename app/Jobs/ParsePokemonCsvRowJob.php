@@ -24,22 +24,19 @@ class ParsePokemonCsvRowJob implements ShouldQueue
         $batch = PokemonImportBatch::find($this->batchId);
 
         try {
-            [
-                $number,
-                $name,
-                $type1,
-                $type2,
-                $hp,
-                $attack,
-                $defense,
-                $spAttack,
-                $spDefense,
-                $speed
-            ] = $this->row;
+            $number = $this->row['Number'] ?? null;
+            $name = $this->row['Name'] ?? null;
 
-            /**
-             * 1. Create or update Pokémon core data
-             */
+            $type1 = $this->row['Type 1'] ?? null;
+            $type2 = $this->row['Type 2'] ?? null;
+
+            $hp = $this->row['HP'] ?? 0;
+            $attack = $this->row['Attack'] ?? 0;
+            $defense = $this->row['Defense'] ?? 0;
+            $spAttack = $this->row['Sp.Attack'] ?? 0;
+            $spDefense = $this->row['Sp.Defense'] ?? 0;
+            $speed = $this->row['Speed'] ?? 0;
+
             $pokemon = Pokemon::updateOrCreate(
                 ['pokedex_number' => (int) $number],
                 [
@@ -55,9 +52,6 @@ class ParsePokemonCsvRowJob implements ShouldQueue
                 ]
             );
 
-            /**
-             * 2. Resolve types
-             */
             $typeIds = collect([$type1, $type2])
                 ->filter()
                 ->map(fn ($typeName) => Type::firstOrCreate([
@@ -68,30 +62,15 @@ class ParsePokemonCsvRowJob implements ShouldQueue
                 ->values()
                 ->all();
 
-            /**
-             * 3. Enforce max 2 types
-             */
             if (count($typeIds) > 2) {
-                Log::warning("Pokemon {$pokemon->id} has more than 2 types. Trimming.");
                 $typeIds = array_slice($typeIds, 0, 2);
             }
 
-            /**
-             * 4. Sync pivot
-             */
             $pokemon->types()->sync($typeIds);
 
-            /**
-             * 5. Kick off enrichment
-             */
             EnrichPokemonFromExternalApisJob::dispatch($pokemon->id);
 
-            /**
-             * 6. Mark success
-             */
-            if ($batch) {
-                $batch->increment('processed_rows');
-            }
+            $batch?->increment('processed_rows');
 
         } catch (\Throwable $e) {
 
@@ -100,14 +79,9 @@ class ParsePokemonCsvRowJob implements ShouldQueue
                 'error' => $e->getMessage(),
             ]);
 
-            /**
-             * Mark failure
-             */
-            if ($batch) {
-                $batch->increment('failed_rows');
-            }
+            $batch?->increment('failed_rows');
 
-            // optionally rethrow if you want queue retry behavior
+            // optionally:
             // throw $e;
         }
     }

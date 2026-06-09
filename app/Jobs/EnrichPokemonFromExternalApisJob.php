@@ -12,9 +12,13 @@ class EnrichPokemonFromExternalApisJob implements ShouldQueue
 
     public function __construct(public int $pokemonId) {}
 
-    public function handle(): void
+    public function handle(PokemonApiClient $client): void
     {
         $pokemon = Pokemon::with('types')->findOrFail($this->pokemonId);
+
+        $pokeData = $client->fetchPokeApi($this->pokemonId);
+
+        $tcgData = $client->fetchTcgdex($this->pokemonId);
 
         /**
          * 1. Prevent duplicate enrichment runs

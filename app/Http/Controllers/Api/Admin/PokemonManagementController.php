@@ -30,7 +30,8 @@ class PokemonManagementController extends Controller
      */
     public function sync(Pokemon $pokemon)
     {
-        EnrichPokemonFromExternalApisJob::dispatch($pokemon->id);
+        EnrichPokemonFromExternalApisJob::dispatch($pokemon->id)
+            ->delay(now()->addSeconds(10));
 
         return response()->json([
             'message' => 'Sync queued',
