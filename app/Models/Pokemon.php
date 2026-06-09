@@ -61,6 +61,9 @@ class Pokemon extends Model
             'source_csv_imported_at' => 'datetime',
             'source_pokeapi_synced_at' => 'datetime',
             'source_tcgdex_synced_at' => 'datetime',
+            'raw_pokeapi' => 'array',
+            'raw_tcgdex' => 'array',
+            'is_enriched' => 'boolean',
         ];
     }
 

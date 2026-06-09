@@ -37,6 +37,10 @@ class PokemonFactory extends Factory
 
             'description' => fake()->sentence(),
 
+            'raw_pokeapi' => null,
+            'raw_tcgdex' => null,
+            'is_enriched' => false,
+
             'sprite_url' => null,
             'artwork_url' => null,
             'cry_url' => null,
