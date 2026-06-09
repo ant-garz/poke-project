@@ -14,18 +14,41 @@ class CardFactory extends Factory
 
     public function definition(): array
     {
+        $supertype = fake()->randomElement([
+            'Pokémon',
+            'Trainer',
+            'Energy',
+        ]);
+
+        $isPokemon = $supertype === 'Pokémon';
+
         return [
-            'pokemon_id' => Pokemon::factory(), // OK for testing only
+            // Polymorphic relationship (replaces pokemon_id)
+            'cardable_type' => $isPokemon ? Pokemon::class : null,
+            'cardable_id' => $isPokemon ? Pokemon::factory() : null,
+
             'card_set_id' => CardSet::factory(),
 
             'external_id' => (string) Str::uuid(),
 
             'source_tcgdex_id' => fake()->unique()->uuid(),
 
-            'name' => fake()->words(2, true),
+            'name' => $isPokemon
+                ? fake()->firstName()
+                : fake()->words(2, true),
 
-            'supertype' => 'Pokémon',
-            'subtypes' => [],
+            'supertype' => $supertype,
+
+            'subtypes' => $isPokemon
+                ? fake()->randomElements([
+                    'Basic',
+                    'Stage 1',
+                    'Stage 2',
+                    'EX',
+                    'GX',
+                    'V',
+                ], 1)
+                : [],
 
             'rarity' => fake()->randomElement([
                 'Common',
@@ -38,7 +61,9 @@ class CardFactory extends Factory
 
             'image_url' => null,
 
-            'hp' => fake()->optional()->numberBetween(30, 300),
+            'hp' => $isPokemon
+                ? fake()->numberBetween(30, 300)
+                : null,
 
             'raw_data' => null,
         ];

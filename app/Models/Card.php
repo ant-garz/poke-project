@@ -6,46 +6,48 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Card extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'pokemon_id',
         'card_set_id',
-        'external_id',
-        'name',
         'supertype',
-        'subtypes',
-        'rarity',
-        'number',
-        'image_url',
-        'hp',
-        'raw_data',
+        'cardable_id',
+        'cardable_type',
+        'external_id',
         'source_tcgdex_id',
+        'name',
+        'number',
+        'hp',
+        'rarity',
+        'image_url',
+        'raw_data',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'subtypes' => 'array',
+    ];
+
+    public function cardable(): MorphTo
     {
-        return [
-            'subtypes' => 'array',
-            'raw_data' => 'array',
-        ];
+        return $this->morphTo();
     }
 
-    public function pokemon(): BelongsTo
-    {
-        return $this->belongsTo(Pokemon::class);
-    }
-
-    public function set(): BelongsTo
+    public function set()
     {
         return $this->belongsTo(CardSet::class, 'card_set_id');
     }
 
-    public function attacks(): HasMany
+    public function attacks()
     {
         return $this->hasMany(CardAttack::class);
+    }
+
+    public function isPokemon(): bool
+    {
+        return $this->supertype === 'Pokémon';
     }
 }

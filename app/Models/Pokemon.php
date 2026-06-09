@@ -94,4 +94,9 @@ class Pokemon extends Model
             ->withPivot('slot')
             ->orderBy('pokemon_type.slot');
     }
+
+    public function cards()
+    {
+        return $this->morphMany(Card::class, 'cardable');
+    }
 }
