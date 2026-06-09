@@ -182,6 +182,7 @@
         <button
             class="mt-4 rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
             on:click={() => document.getElementById('csvInput')?.click()}
+            disabled={success !== null || error !== null}
         >
             Select File
         </button>
@@ -296,7 +297,7 @@
         <button
             class="rounded-md border px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 enabled:hover:cursor-pointer disabled:opacity-50"
             on:click={clear}
-            disabled={success !== null || error !== null}
+            disabled={success !== null}
         >
             Clear
         </button>

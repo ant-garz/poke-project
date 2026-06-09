@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Pokemon;
 use App\Models\Type;
+use App\Models\PokemonImportBatch;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Str;
@@ -13,71 +14,101 @@ class ParsePokemonCsvRowJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public array $row) {}
+    public function __construct(
+        public int $batchId,
+        public array $row
+    ) {}
 
     public function handle(): void
     {
-        [
-            $number,
-            $name,
-            $type1,
-            $type2,
-            $hp,
-            $attack,
-            $defense,
-            $spAttack,
-            $spDefense,
-            $speed
-        ] = $this->row;
+        $batch = PokemonImportBatch::find($this->batchId);
 
-        /**
-         * 1. Create or update Pokémon core data
-         */
-        $pokemon = Pokemon::updateOrCreate(
-            ['pokedex_number' => (int) $number],
+        try {
             [
-                'name' => $name,
-                'slug' => Str::slug($name . '-' . $number),
+                $number,
+                $name,
+                $type1,
+                $type2,
+                $hp,
+                $attack,
+                $defense,
+                $spAttack,
+                $spDefense,
+                $speed
+            ] = $this->row;
 
-                'hp' => (int) $hp,
-                'attack' => (int) $attack,
-                'defense' => (int) $defense,
-                'special_attack' => (int) $spAttack,
-                'special_defense' => (int) $spDefense,
-                'speed' => (int) $speed,
-            ]
-        );
+            /**
+             * 1. Create or update Pokémon core data
+             */
+            $pokemon = Pokemon::updateOrCreate(
+                ['pokedex_number' => (int) $number],
+                [
+                    'name' => $name,
+                    'slug' => Str::slug($name . '-' . $number),
 
-        /**
-         * 2. Resolve types (CSV → DB)
-         * - ensure Type records exist
-         */
-        $typeIds = collect([$type1, $type2])
-            ->filter() // removes null/empty
-            ->map(fn ($typeName) => Type::firstOrCreate([
-                'name' => ucfirst(trim($typeName)),
-                'slug' => Str::slug($typeName),
-            ]))
-            ->pluck('id')
-            ->values()
-            ->all();
+                    'hp' => (int) $hp,
+                    'attack' => (int) $attack,
+                    'defense' => (int) $defense,
+                    'special_attack' => (int) $spAttack,
+                    'special_defense' => (int) $spDefense,
+                    'speed' => (int) $speed,
+                ]
+            );
 
-        /**
-         * 3. Enforce business rule: max 2 types
-         */
-        if (count($typeIds) > 2) {
-            Log::warning("Pokemon {$pokemon->id} has more than 2 types in CSV. Trimming.");
-            $typeIds = array_slice($typeIds, 0, 2);
+            /**
+             * 2. Resolve types
+             */
+            $typeIds = collect([$type1, $type2])
+                ->filter()
+                ->map(fn ($typeName) => Type::firstOrCreate([
+                    'name' => ucfirst(trim($typeName)),
+                    'slug' => Str::slug($typeName),
+                ]))
+                ->pluck('id')
+                ->values()
+                ->all();
+
+            /**
+             * 3. Enforce max 2 types
+             */
+            if (count($typeIds) > 2) {
+                Log::warning("Pokemon {$pokemon->id} has more than 2 types. Trimming.");
+                $typeIds = array_slice($typeIds, 0, 2);
+            }
+
+            /**
+             * 4. Sync pivot
+             */
+            $pokemon->types()->sync($typeIds);
+
+            /**
+             * 5. Kick off enrichment
+             */
+            EnrichPokemonFromExternalApisJob::dispatch($pokemon->id);
+
+            /**
+             * 6. Mark success
+             */
+            if ($batch) {
+                $batch->increment('processed_rows');
+            }
+
+        } catch (\Throwable $e) {
+
+            Log::error('Failed parsing Pokémon CSV row', [
+                'row' => $this->row,
+                'error' => $e->getMessage(),
+            ]);
+
+            /**
+             * Mark failure
+             */
+            if ($batch) {
+                $batch->increment('failed_rows');
+            }
+
+            // optionally rethrow if you want queue retry behavior
+            // throw $e;
         }
-
-        /**
-         * 4. Sync pivot table (authoritative CSV source)
-         */
-        $pokemon->types()->sync($typeIds);
-
-        /**
-         * 5. Kick off enrichment pipeline
-         */
-        EnrichPokemonFromExternalApisJob::dispatch($pokemon->id);
     }
 }

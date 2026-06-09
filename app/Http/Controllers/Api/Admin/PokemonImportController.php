@@ -7,6 +7,9 @@ use App\Models\PokemonImportBatch;
 use App\Services\PokemonImportService;
 use Illuminate\Http\Request;
 
+use App\Enums\PokemonImportBatchStatus;
+use App\Jobs\ImportPokemonCsvJob;
+
 class PokemonImportController extends Controller
 {
     public function __construct(
@@ -36,7 +39,8 @@ class PokemonImportController extends Controller
         // 2. Create batch record
         $batch = PokemonImportBatch::create([
             'file_path' => $path,
-            'status' => 'pending',
+            'original_filename' => $request->file('file')->getClientOriginalName(),
+            'status' => PokemonImportBatchStatus::Uploaded,
             'progress' => 0,
         ]);
 

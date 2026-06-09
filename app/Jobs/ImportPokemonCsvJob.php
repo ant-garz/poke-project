@@ -1,9 +1,13 @@
 <?php
 
 namespace App\Jobs;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+
+use App\Models\PokemonImportBatch;
+use App\Jobs\ParsePokemonCsvRowJob;
+use App\Enums\PokemonImportBatchStatus;
 
 /**
  * This kicks off main workflow
@@ -29,28 +33,25 @@ class ImportPokemonCsvJob implements ShouldQueue
     {
         $batch = PokemonImportBatch::findOrFail($this->batchId);
 
-        // 1. Get file from storage
         if (!Storage::exists($batch->file_path)) {
             throw new \Exception("CSV file not found: {$batch->file_path}");
         }
 
         $contents = Storage::get($batch->file_path);
 
-        // 2. Convert to lines
         $lines = array_filter(explode("\n", trim($contents)));
 
         $headers = str_getcsv(array_shift($lines));
 
+        $batch->update([
+            'status' => PokemonImportBatchStatus::Processing,
+            'total_rows' => count($lines),
+        ]);
+
         foreach ($lines as $index => $line) {
             $row = array_combine($headers, str_getcsv($line));
 
-            // dispatch row job (your existing pipeline)
             ParsePokemonCsvRowJob::dispatch($batch->id, $row);
         }
-
-        $batch->update([
-            'status' => 'processing',
-            'total_rows' => count($lines),
-        ]);
     }
 }
