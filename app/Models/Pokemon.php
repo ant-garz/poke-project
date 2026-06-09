@@ -44,6 +44,15 @@ class Pokemon extends Model
         'source_tcgdex_synced_at',
     ];
 
+    protected static function booted()
+    {
+        static::creating(function ($pokemon) {
+            if (!$pokemon->slug) {
+                $pokemon->slug = \Str::slug($pokemon->name);
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

@@ -23,6 +23,7 @@ class Card extends Model
         'image_url',
         'hp',
         'raw_data',
+        'source_tcgdex_id',
     ];
 
     protected function casts(): array

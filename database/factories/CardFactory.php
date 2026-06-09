@@ -20,6 +20,8 @@ class CardFactory extends Factory
 
             'external_id' => (string) Str::uuid(),
 
+            'source_tcgdex_id' => fake()->unique()->uuid(),
+
             'name' => fake()->words(2, true),
 
             'supertype' => 'Pokémon',

@@ -27,6 +27,8 @@ class CardSeeder extends Seeder
                 $card->pokemon_id = Pokemon::inRandomOrder()->first()->id;
                 $card->card_set_id = $sets->random()->id;
 
+                $card->source_tcgdex_id = fake()->uuid();
+
                 $card->save();
             });
     }
