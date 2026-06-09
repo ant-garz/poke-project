@@ -6,11 +6,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
 
+// In order to access any route other than the landing page, the user must be logged in and have a verified email
 Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::inertia('/dashboard', 'Dashboard')
         ->name('dashboard');
 
+    // "manage" is an umbrella permission name to represent full CRUD (Create, Read, Update, Delete) privileges over a specific resource or module
     Route::prefix('admin')
         ->name('admin.')
         ->middleware(['role:admin'])

@@ -54,7 +54,7 @@
             <h1
                 class="text-2xl leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
             >
-                Welcome to the poke project
+                Welcome to the poké project
             </h1>
 
             <img
