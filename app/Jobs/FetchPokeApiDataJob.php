@@ -46,10 +46,27 @@ class FetchPokeApiDataJob implements ShouldQueue
             'height' => $data['height'] ?? null,
             'weight' => $data['weight'] ?? null,
             'base_experience' => $data['base_experience'] ?? null,
-            'raw_pokeapi' => $data,
+            'raw_pokeapi' =>  json_encode($this->normalize_to_array($data), JSON_THROW_ON_ERROR),
             'source_pokeapi_synced_at' => now(),
         ]);
 
         DownloadPokemonAssetsJob::dispatch($pokemon->id)->onQueue('assets');
+    }
+
+        public function normalize_to_array(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if ($value instanceof \JsonSerializable) {
+            return (array) $value->jsonSerialize();
+        }
+
+        if (is_object($value)) {
+            return json_decode(json_encode($value), true) ?? [];
+        }
+
+        return [];
     }
 }

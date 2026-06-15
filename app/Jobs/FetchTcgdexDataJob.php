@@ -52,12 +52,7 @@ class FetchTcgdexDataJob implements ShouldQueue
             $pokemon->update([
                 'description' => $card->description ?? null,
                 'artwork_url' => $card->image ?? null,
-
-                // safest way to persist SDK object
-                'raw_tcgdex' => json_decode(
-                    json_encode($card),
-                    true
-                ),
+                'raw_tcgdex' =>  json_encode($this->normalize_to_array($card), JSON_THROW_ON_ERROR),
 
                 'source_tcgdex_synced_at' => now(),
             ]);
@@ -70,31 +65,30 @@ class FetchTcgdexDataJob implements ShouldQueue
 
             $set = null;
 
-            if (isset($card->set)) {
+            if (isset($card->set) && is_object($card->set)) {
 
-                $set = CardSet::updateOrCreate(
-                    [
-                        'external_id' => $card->set->id,
-                    ],
-                    [
-                        'name' => $card->set->name ?? null,
-                        'series' => $card->set->serie ?? null,
+                $setData = json_decode(json_encode($card->set), true);
 
-                        'logo_url' => $card->set->logo ?? null,
-                        'symbol_url' => $card->set->symbol ?? null,
+                if (!empty($setData['id'] ?? null)) {
 
-                        'card_count_official'
-                            => $card->set->cardCount->official ?? null,
+                    $set = CardSet::updateOrCreate(
+                        [
+                            'external_id' => (string) $setData['id'],
+                        ],
+                        [
+                            'name' => $setData['name'] ?? null,
+                            'series' => $setData['serie'] ?? null,
 
-                        'card_count_total'
-                            => $card->set->cardCount->total ?? null,
+                            'logo_url' => $setData['logo'] ?? null,
+                            'symbol_url' => $setData['symbol'] ?? null,
 
-                        'raw_data' => json_decode(
-                            json_encode($card->set),
-                            true
-                        ),
-                    ]
-                );
+                            'card_count_official' => $setData['cardCount']['official'] ?? null,
+                            'card_count_total' => $setData['cardCount']['total'] ?? null,
+
+                            'raw_data' => $setData,
+                        ]
+                    );
+                }
             }
 
             /*
@@ -102,33 +96,34 @@ class FetchTcgdexDataJob implements ShouldQueue
             | Sync Card
             |--------------------------------------------------------------------------
             */
-
             $localCard = Card::updateOrCreate(
                 [
-                    'source_tcgdex_id' => $card->id,
+                    'source_tcgdex_id' => (string) $card->id,
                 ],
                 [
+                    // ✅ SAFE nullable FK
                     'card_set_id' => $set?->id,
 
                     'cardable_id' => $pokemon->id,
                     'cardable_type' => Pokemon::class,
 
-                    'external_id' => $card->id,
-                    'source_tcgdex_id' => $card->id,
+                    'external_id' => (string) $card->id,
+                    'source_tcgdex_id' => (string) $card->id,
 
                     'name' => $card->name ?? null,
                     'number' => $card->localId ?? null,
 
-                    'hp' => $card->hp ?? null,
+                    'hp' => is_numeric($card->hp ?? null) ? (int) $card->hp : null,
                     'rarity' => $card->rarity ?? null,
 
                     'image_url' => $card->image ?? null,
 
                     'supertype' => 'Pokémon',
 
-                    'raw_data' => json_decode(
-                        json_encode($card),
-                        true
+                    // ✅ ALWAYS safe JSON
+                    'raw_data' => json_encode(
+                        json_decode(json_encode($card), true),
+                        JSON_THROW_ON_ERROR
                     ),
                 ]
             );
@@ -185,5 +180,22 @@ class FetchTcgdexDataJob implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    public function normalize_to_array(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if ($value instanceof \JsonSerializable) {
+            return (array) $value->jsonSerialize();
+        }
+
+        if (is_object($value)) {
+            return json_decode(json_encode($value), true) ?? [];
+        }
+
+        return [];
     }
 }
