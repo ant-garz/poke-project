@@ -158,11 +158,5 @@ class DownloadPokemonAssetsJob implements ShouldQueue
         $path = "pokemon/{$pokemon->id}/tcg/card.webp";
 
         $stored = $this->downloadToStorage($imageUrl, $path);
-
-        if ($stored) {
-            $pokemon->update([
-                'tcg_artwork_url' => $stored, // 👈 strongly recommended separate column
-            ]);
-        }
     }
 }

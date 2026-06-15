@@ -27,7 +27,7 @@ class FetchTcgdexDataJob implements ShouldQueue
         $pokemon->update([
             'description' => $card->description ?? null,
             'artwork_url' => $card->image ?? null,
-            'raw_tcgdex' => json_decode(json_encode($card), true),
+            'raw_tcgdex' => $card,
             'source_tcgdex_synced_at' => now(),
         ]);
 

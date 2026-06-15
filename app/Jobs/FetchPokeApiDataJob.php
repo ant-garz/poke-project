@@ -46,7 +46,7 @@ class FetchPokeApiDataJob implements ShouldQueue
             'height' => $data['height'] ?? null,
             'weight' => $data['weight'] ?? null,
             'base_experience' => $data['base_experience'] ?? null,
-            'raw_pokeapi' => json_decode(json_encode($data), true),
+            'raw_pokeapi' => $data,
             'source_pokeapi_synced_at' => now(),
         ]);
 

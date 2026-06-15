@@ -18,38 +18,10 @@ class FinalizePokemonImportBatchJob implements ShouldQueue
     {
         $batch = PokemonImportBatch::findOrFail($this->batchId);
 
-        /*
-        |--------------------------------------------------------------------------
-        | STEP 1: Validate / normalize Pokémon enrichment state
-        |--------------------------------------------------------------------------
-        |
-        | Even though Pokémon are NOT batch-scoped, we still ensure their
-        | enrichment flags are consistent with actual API results.
-        |
-        | This acts as a safety reconciliation pass.
-        |
-        */
-
-        Pokemon::query()
-            ->whereNotNull('source_csv_imported_at')
-            ->chunkById(500, function ($pokemonBatch) {
-                foreach ($pokemonBatch as $pokemon) {
-
-                    $isEnriched =
-                        !is_null($pokemon->source_pokeapi_synced_at) &&
-                        !is_null($pokemon->source_tcgdex_synced_at);
-
-                    if ($pokemon->is_enriched !== $isEnriched) {
-                        $pokemon->update([
-                            'is_enriched' => $isEnriched,
-                        ]);
-                    }
-                }
-            });
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 2: Batch progress calculation (IMPORT TRACKING ONLY)
+        | Batch progress calculation (IMPORT TRACKING ONLY)
         |--------------------------------------------------------------------------
         |
         | DO NOT infer Pokémon membership from batch_id.
@@ -62,7 +34,7 @@ class FinalizePokemonImportBatchJob implements ShouldQueue
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 3: Update batch stats
+        | Update batch stats
         |--------------------------------------------------------------------------
         */
 
@@ -73,7 +45,7 @@ class FinalizePokemonImportBatchJob implements ShouldQueue
 
         /*
         |--------------------------------------------------------------------------
-        | STEP 4: Finalize batch if complete
+        | Finalize batch if complete
         |--------------------------------------------------------------------------
         */
 

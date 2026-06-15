@@ -43,6 +43,9 @@ class Pokemon extends Model
         'source_csv_imported_at',
         'source_pokeapi_synced_at',
         'source_tcgdex_synced_at',
+
+        'primary_type_id',
+        'secondary_type_id',
     ];
 
     protected static function booted()
@@ -64,7 +67,6 @@ class Pokemon extends Model
             'source_tcgdex_synced_at' => 'datetime',
             'raw_pokeapi' => 'array',
             'raw_tcgdex' => 'array',
-            'is_enriched' => 'boolean',
         ];
     }
 

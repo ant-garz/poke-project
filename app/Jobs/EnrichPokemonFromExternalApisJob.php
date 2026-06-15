@@ -17,20 +17,19 @@ class EnrichPokemonFromExternalApisJob implements ShouldQueue
         $pokemon = Pokemon::findOrFail($this->pokemonId);
 
         // prevent double runs
-        if ($pokemon->is_enriched) {
+        if ($pokemon->source_pokeapi_synced_at !== null && $pokemon->source_tcgdex_synced_at !== null) {
             return;
         }
-
-        // mark as queued (not finished)
-        $pokemon->update([
-            'is_enriched' => false,
-        ]);
 
         /**
          * ONLY DISPATCH — NO API CALLS HERE
          */
-        FetchPokeApiDataJob::dispatch($pokemon->id)->delay(now()->addSeconds(1));
+        if($pokemon->source_pokeapi_synced_at === null){
+            FetchPokeApiDataJob::dispatch($pokemon->id)->delay(now()->addSeconds(1));
+        }
 
-        FetchTcgdexDataJob::dispatch($pokemon->id)->delay(now()->addSeconds(2));
+        if($pokemon->source_tcgdex_synced_at === null){
+            FetchTcgdexDataJob::dispatch($pokemon->id)->delay(now()->addSeconds(2));
+        }
     }
 }

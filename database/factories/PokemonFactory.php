@@ -39,7 +39,6 @@ class PokemonFactory extends Factory
 
             'raw_pokeapi' => null,
             'raw_tcgdex' => null,
-            'is_enriched' => false,
 
             'sprite_url' => null,
             'artwork_url' => null,
