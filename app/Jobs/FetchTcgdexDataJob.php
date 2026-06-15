@@ -3,77 +3,62 @@
 namespace App\Jobs;
 
 use App\Models\Pokemon;
+use App\Services\PokemonAssetDownloader;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use App\Services\ExternalApi\TcgdexClient;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class FetchTcgdexDataJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public int $pokemonId) {}
+    public function __construct(
+        public int $pokemonId,
+        public string $setCode,
+        public string $cardNumber
+    ) {}
 
-    public function handle(TcgdexClient $client): void
+    public function handle(PokemonAssetDownloader $downloader): void
     {
-        $pokemon = Pokemon::findOrFail($this->pokemonId);
+        $pokemon = Pokemon::find($this->pokemonId);
 
-        /**
-         * 1. If already enriched with TCG data, skip
-         */
-        if (!empty($pokemon->tcg_data)) {
+        if (! $pokemon) {
             return;
         }
 
         /**
-         * 2. Try to resolve card by name (fallback strategy)
+         * 1. Build base TCGDex asset URL
+         * Example:
+         * https://assets.tcgdex.net/en/swsh/swsh3/136
          */
-        $card = null;
-
-        try {
-            $card = $client->findCardByName($pokemon->name);
-        } catch (\Throwable $e) {
-            Log::warning('TCGdex search failed', [
-                'pokemon_id' => $pokemon->id,
-                'name' => $pokemon->name,
-                'error' => $e->getMessage(),
-            ]);
-
-            // retry later (transient failure)
-            $this->release(10);
-            return;
-        }
+        $baseAssetUrl = "https://assets.tcgdex.net/en/swsh/{$this->setCode}/{$this->cardNumber}";
 
         /**
-         * 3. If no match found, retry later (or permanently fail depending on your preference)
+         * 2. Store raw metadata if you're calling SDK/API elsewhere
          */
-        if (!$card) {
-            $this->release(30);
-            return;
-        }
+        $pokemon->update([
+            'raw_tcgdex' => [
+                'set' => $this->setCode,
+                'card_number' => $this->cardNumber,
+                'asset_base_url' => $baseAssetUrl,
+            ],
+            'source_tcgdex_synced_at' => now(),
+        ]);
 
         /**
-         * 4. Persist raw card data
+         * 3. Download ALL card assets
          */
-        try {
-            $pokemon->update([
-                'tcg_card_id' => $card->id ?? null,
-                'tcg_data' => json_encode($card),
-                'description' => $card->description ?? $pokemon->description,
-                'sprite_url' => $card->image ?? $pokemon->sprite_url,
-                'artwork_url' => $card->image ?? $pokemon->artwork_url,
-                'source_tcgdex_synced_at' => now(),
-                'source_csv_imported_at' => now(),
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Failed saving TCGdex data', [
-                'pokemon_id' => $pokemon->id,
-                'error' => $e->getMessage(),
-            ]);
+        $assets = $downloader->downloadTcgCardAssets(
+            $pokemon,
+            $baseAssetUrl
+        );
 
-            // retry safely
-            $this->release(10);
-            return;
-        }
+        /**
+         * 4. Optional: store “primary” image reference
+         * (you still keep full set on disk)
+         */
+        $pokemon->update([
+            'artwork_url' => $assets['high_webp'] ?? null,
+        ]);
     }
 }

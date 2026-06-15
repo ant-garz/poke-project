@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Jobs;
 
 use App\Models\Pokemon;
@@ -10,13 +11,20 @@ class FetchPokeApiDataJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public int $pokemonId) {}
+    public function __construct(
+        public int $pokemonId
+    ) {}
 
     public function handle(): void
     {
-        $pokemon = Pokemon::findOrFail($this->pokemonId);
+        $pokemon = Pokemon::findOrFail(
+            $this->pokemonId
+        );
 
-        $response = Http::get("https://pokeapi.co/api/v2/pokemon/" . $pokemon->pokedex_number);
+        $response = Http::timeout(30)
+            ->get(
+                "https://pokeapi.co/api/v2/pokemon/{$pokemon->pokedex_number}"
+            );
 
         if ($response->failed()) {
             return;
@@ -26,8 +34,16 @@ class FetchPokeApiDataJob implements ShouldQueue
 
         $pokemon->update([
             'height' => $data['height'] ?? null,
+            'weight' => $data['weight'] ?? null,
             'base_experience' => $data['base_experience'] ?? null,
+
             'raw_pokeapi' => $data,
+
+            'source_pokeapi_synced_at' => now(),
         ]);
+
+        DownloadPokemonAssetsJob::dispatch(
+            $pokemon->id
+        )->onQueue('assets');
     }
 }
