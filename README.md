@@ -1,27 +1,289 @@
-# Laravel + Svelte Starter Kit
+# Pokemon Index
 
-## Introduction
+Pokemon Index is a personal, non-commercial project focused on building a Pokémon species database and discovery platform.
 
-Our Svelte starter kit provides a robust, modern starting point for building Laravel applications with a Svelte frontend using [Inertia](https://inertiajs.com).
+The application uses Pokémon species as its central domain model and enriches that data from multiple external sources.
 
-Inertia allows you to build modern, single-page Svelte applications using classic server-side routing and controllers. This lets you enjoy the frontend power of Svelte combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+## Project Goals
 
-This Svelte starter kit utilizes Svelte 5, TypeScript, Tailwind, and the [shadcn-svelte](https://shadcn-svelte.com) and [bits-ui](https://bits-ui.com) component libraries.
+* Maintain a canonical Pokémon species dataset
+* Import and manage Pokémon data through an administrative interface
+* Enrich species with external API data
+* Store trading card information separately from species data
+* Support future features such as abilities, evolutions, encounters, and advanced search
+* Explore scalable Laravel architecture patterns including queues, background processing, and data ingestion pipelines
 
-## Official Documentation
+## Non-Commercial Disclaimer
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+This project is a personal educational and portfolio project.
 
-## Contributing
+It is not affiliated with, endorsed by, or sponsored by Nintendo, Game Freak, Creatures Inc., The Pokémon Company, PokeAPI, Pokémon Database, or TCGDex.
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+All Pokémon-related names, artwork, trademarks, and intellectual property belong to their respective owners.
 
-All contributions to the Starter Kits from now on should be made through [Maestro](https://github.com/laravel/maestro).
+No commercial use is intended.
 
-## Code of Conduct
+## Technology Stack
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Backend
+
+* Laravel 13
+* PHP 8.4
+* MySQL
+* Laravel Queues
+* Spatie Laravel Permission
+
+### Frontend
+
+* Svelte 5
+* TypeScript
+* Inertia.js
+* Tailwind CSS
+
+### Development Environment
+
+* Laravel Sail
+* Docker
+* WSL
+
+## Core Architecture
+
+### Pokémon as the Source of Truth
+
+The Pokémon species table is the primary domain entity.
+
+Everything else exists to enrich or relate back to a Pokémon species.
+
+Examples include:
+
+* Types
+* Abilities
+* Trading Cards
+* External API mappings
+* Import metadata
+
+### Canonical Data Source
+
+Initial Pokémon data is imported from a structured CSV export generated from Pokémon Database.
+
+The CSV acts as the authoritative source for:
+
+* Pokédex number
+* Name
+* Primary typing
+* Secondary typing
+* Base stats
+
+External APIs do not overwrite canonical imported data.
+
+### External Enrichment Sources
+
+#### PokeAPI
+
+Used for:
+
+* Species metadata
+* Descriptions
+* Sprites
+* Artwork
+* Cries
+* Dimensions
+* Future evolution and move data
+
+#### TCGDex
+
+Used for:
+
+* Trading card metadata
+* Card artwork
+* Card rarity
+* Card sets
+* Card attacks
+* Additional Pokémon descriptions
+
+## Data Model
+
+### Pokémon
+
+Stores:
+
+* Species identity
+* Base stats
+* Description
+* Artwork and sprite URLs
+* Synchronization metadata
+
+### Types
+
+Normalized Pokémon type records.
+
+Each Pokémon may have:
+
+* Primary Type
+* Secondary Type
+
+### Cards
+
+Trading card records associated with Pokémon.
+
+Cards are treated as separate domain entities rather than extensions of Pokémon species.
+
+### Card Sets
+
+Represents Pokémon Trading Card Game expansions and releases.
+
+### External Mappings
+
+Stores relationships between internal Pokémon records and external systems such as:
+
+* PokeAPI
+* TCGDex
+
+## Import Pipeline
+
+### Step 1
+
+Administrator uploads a CSV file.
+
+### Step 2
+
+A batch record is created and tracked.
+
+### Step 3
+
+The import job reads the CSV and dispatches individual row-processing jobs.
+
+### Step 4
+
+Each row job:
+
+* Creates or updates a Pokémon
+* Resolves types
+* Updates canonical species data
+* Dispatches enrichment jobs
+
+### Step 5
+
+External enrichment jobs:
+
+* Fetch data from PokeAPI
+* Fetch data from TCGDex
+* Store raw API payloads
+* Update enrichment fields
+
+## Queue Processing
+
+Imports are processed asynchronously using Laravel queues.
+
+Run a queue worker locally:
+
+```bash
+./vendor/bin/sail artisan queue:work
+```
+
+For development environments:
+
+```bash
+./vendor/bin/sail artisan queue:work --tries=1
+```
+
+## Import Batch Tracking
+
+Each import batch tracks:
+
+* Upload status
+* Total rows
+* Processed rows
+* Failed rows
+
+Progress is calculated using:
+
+```text
+(processed_rows + failed_rows) / total_rows
+```
+
+This allows progress monitoring without storing a separate progress column.
+
+## API Rate Limiting
+
+External services are rate limited globally.
+
+Current limits:
+
+* PokeAPI: 20 requests per minute
+* TCGDex: 20 requests per minute
+
+Rate limiting is enforced within dedicated API client services.
+
+## Raw Payload Storage
+
+External API responses are preserved as JSON payloads.
+
+Benefits include:
+
+* Auditing
+* Reprocessing
+* Future schema expansion
+* Easier debugging
+
+## Current Status
+
+Implemented:
+
+* Authentication
+* Role and permission management
+* Administrative dashboard
+* CSV Pokémon imports
+* Import batch tracking
+* Queue-based ingestion
+* Type normalization
+* PokeAPI enrichment
+* TCGDex enrichment
+* External source mapping foundation
+
+Planned:
+
+* Abilities
+* Evolution chains
+* Advanced filtering
+* Search improvements
+* Scheduled re-enrichment
+* Card browsing experience
+* Public Pokémon index pages
+
+## Development
+
+Install dependencies:
+
+```bash
+composer install
+npm install
+```
+
+Start containers:
+
+```bash
+./vendor/bin/sail up -d
+```
+
+Run migrations:
+
+```bash
+./vendor/bin/sail artisan migrate
+```
+
+Start frontend:
+
+```bash
+npm run dev
+```
+
+Run queue worker:
+
+```bash
+./vendor/bin/sail artisan queue:work
+```
 
 ## License
 
-The Laravel + Svelte starter kit is open-sourced software licensed under the MIT license.
+This repository is provided for educational and personal portfolio purposes.

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Pokemon extends Model
 {
@@ -101,12 +102,18 @@ class Pokemon extends Model
         return $this->belongsTo(Type::class, 'secondary_type_id');
     }
 
-    public function getTypesAttribute()
+    protected function types(): Attribute
     {
-        return collect([
-            $this->primaryType,
-            $this->secondaryType,
-        ])->filter()->values();
+        return Attribute::make(
+            get: fn () => collect([
+                $this->primaryType,
+                $this->secondaryType,
+            ])->filter()->values()
+        );
+    }
+
+    public function getPokedexNumberAttribute(){
+        return str_pad($this->pokedex_number, 4, '0', STR_PAD_LEFT);
     }
 
     public function cards()

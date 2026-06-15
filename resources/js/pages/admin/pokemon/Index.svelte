@@ -3,7 +3,7 @@
         {
             title: 'Manage Pokémon',
             href: '/admin/pokemon/manage',
-            description: 'CRUD create, edit, delete Pokémon entries.',
+            description: 'Create, update, or delete individual Pokémon entries.',
         },
         {
             title: 'Import Pokémon',

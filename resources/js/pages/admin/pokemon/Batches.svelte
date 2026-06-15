@@ -14,6 +14,8 @@
         const data = await res.json();
 
         batches = data.data;
+        console.log(batches)
+
         loading = false;
     }
 

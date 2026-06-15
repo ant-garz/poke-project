@@ -18,11 +18,11 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
          $this->call([
             RoleAndPermissionsSeeder::class,
-            PokemonSeeder::class,
+            // PokemonSeeder::class,
             TypeSeeder::class,
-            CardSetSeeder::class,
-            CardSeeder::class,
-            CardAttackSeeder::class,
+            // CardSetSeeder::class,
+            // CardSeeder::class,
+            // CardAttackSeeder::class,
         ]);
     }
 }

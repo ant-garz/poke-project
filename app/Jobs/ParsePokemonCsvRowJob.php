@@ -56,25 +56,27 @@ class ParsePokemonCsvRowJob implements ShouldQueue
                 ]
             );
 
-            $typeIds = collect([$type1, $type2])
-                ->filter()
-                ->map(function ($typeName) {
-                    $typeName = trim($typeName);
+            $primaryType = null;
+            $secondaryType = null;
 
-                    return Type::firstOrCreate(
-                        ['slug' => Str::slug($typeName)],
-                        ['name' => ucfirst(strtolower($typeName))]
-                    );
-                })
-                ->pluck('id')
-                ->values()
-                ->all();
-
-            if (count($typeIds) > 2) {
-                $typeIds = array_slice($typeIds, 0, 2);
+            if ($type1) {
+                $primaryType = Type::firstOrCreate(
+                    ['slug' => Str::slug(trim($type1))],
+                    ['name' => ucfirst(strtolower(trim($type1)))]
+                );
             }
 
-            $pokemon->types()->sync($typeIds);
+            if ($type2) {
+                $secondaryType = Type::firstOrCreate(
+                    ['slug' => Str::slug(trim($type2))],
+                    ['name' => ucfirst(strtolower(trim($type2)))]
+                );
+            }
+
+            $pokemon->update([
+                'primary_type_id' => $primaryType?->id,
+                'secondary_type_id' => $secondaryType?->id,
+            ]);
 
             EnrichPokemonFromExternalApisJob::dispatch($pokemon->id);
 

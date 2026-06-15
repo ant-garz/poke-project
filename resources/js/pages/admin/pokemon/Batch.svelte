@@ -9,6 +9,7 @@
         });
 
         batch = await res.json();
+        console.log(batch)
     }
 
     load();

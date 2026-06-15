@@ -81,7 +81,7 @@
 
             const data = await res.json();
 
-            batchId = data.batch_id;
+            batchId = data.batch_id as number;
             success = `Import started successfully (Batch #${batchId})`;
 
             startPolling(batchId);
@@ -111,13 +111,13 @@
 
             const data = await res.json();
 
-            progress = data.progress;
+            progress = ((data.processed_rows + data.failed_rows) / data.total_rows) * 100 as number;
             status = data.status;
 
             if (status === 'completed' || status === 'failed') {
                 clearInterval(interval);
             }
-        }, 1500);
+        }, 3000);
     }
 
     function clear() {

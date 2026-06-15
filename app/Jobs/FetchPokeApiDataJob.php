@@ -16,7 +16,7 @@ class FetchPokeApiDataJob implements ShouldQueue
     {
         $pokemon = Pokemon::findOrFail($this->pokemonId);
 
-        $response = Http::get("https://pokeapi.co/api/v2/pokemon/" . strtolower($pokemon->name));
+        $response = Http::get("https://pokeapi.co/api/v2/pokemon/" . $pokemon->pokedex_number);
 
         if ($response->failed()) {
             return;
@@ -27,7 +27,7 @@ class FetchPokeApiDataJob implements ShouldQueue
         $pokemon->update([
             'height' => $data['height'] ?? null,
             'base_experience' => $data['base_experience'] ?? null,
-            'raw_pokeapi' => $data, // optional JSON column recommended
+            'raw_pokeapi' => $data,
         ]);
     }
 }
