@@ -111,7 +111,10 @@
 
             const data = await res.json();
 
-            progress = ((data.processed_rows + data.failed_rows) / data.total_rows) * 100 as number;
+            if(data.processed_rows && data.failed_rows && data.total_rows){
+                progress = ((data.processed_rows + data.failed_rows) / data.total_rows) * 100 as number;
+            }
+
             status = data.status;
 
             if (status === 'completed' || status === 'failed') {

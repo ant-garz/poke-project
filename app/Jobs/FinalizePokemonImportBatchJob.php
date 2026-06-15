@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Pokemon;
 use App\Models\PokemonImportBatch;
 use App\Enums\PokemonImportBatchStatus;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,15 +18,51 @@ class FinalizePokemonImportBatchJob implements ShouldQueue
     {
         $batch = PokemonImportBatch::findOrFail($this->batchId);
 
-        $totalProcessed =
-            ($batch->processed_rows ?? 0) +
-            ($batch->failed_rows ?? 0);
+        /**
+         * STEP 1: Mark SUCCESSFUL enrichments
+         */
+        Pokemon::where('batch_id', $batch->id)
+            ->whereNotNull('source_pokeapi_synced_at')
+            ->whereNotNull('source_tcgdex_synced_at')
+            ->update([
+                'is_enriched' => true,
+            ]);
 
-        if ($batch->total_rows === null) {
-            return;
-        }
+        /**
+         * STEP 2: Mark FAILED / INCOMPLETE enrichments
+         */
+        Pokemon::where('batch_id', $batch->id)
+            ->where(function ($q) {
+                $q->whereNull('source_pokeapi_synced_at')
+                  ->orWhereNull('source_tcgdex_synced_at');
+            })
+            ->update([
+                'is_enriched' => false,
+            ]);
 
-        if ($totalProcessed >= $batch->total_rows) {
+        /**
+         * STEP 3: Recalculate batch stats from truth
+         */
+        $enrichedCount = Pokemon::where('batch_id', $batch->id)
+            ->where('is_enriched', true)
+            ->count();
+
+        $failedCount = Pokemon::where('batch_id', $batch->id)
+            ->where('is_enriched', false)
+            ->count();
+
+        /**
+         * STEP 4: Update batch
+         */
+        $batch->update([
+            'processed_rows' => $enrichedCount + $failedCount,
+            'failed_rows' => $failedCount,
+        ]);
+
+        /**
+         * STEP 5: finalize batch
+         */
+        if (($enrichedCount + $failedCount) >= $batch->total_rows) {
             $batch->update([
                 'status' => PokemonImportBatchStatus::Completed,
             ]);

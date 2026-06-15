@@ -52,8 +52,6 @@ class ImportPokemonCsvJob implements ShouldQueue
         foreach ($lines as $index => $line) {
             $row = array_combine($headers, str_getcsv($line));
 
-            // 2 second delay to be mindful of not spamming 3rd parties too fast
-            sleep(2);
             ParsePokemonCsvRowJob::dispatch($batch->id, $row);
         }
 
