@@ -1,11 +1,8 @@
+
 <?php
-
-namespace App\Jobs;
-
-use App\Models\Pokemon;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Services\ExternalApi\TcgdexClient;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Http;
 
 class FetchTcgdexDataJob implements ShouldQueue
 {
@@ -13,38 +10,30 @@ class FetchTcgdexDataJob implements ShouldQueue
 
     public function __construct(public int $pokemonId) {}
 
-    public function handle(): void
+    public function handle(TcgdexClient $tcg): void
     {
         $pokemon = Pokemon::findOrFail($this->pokemonId);
 
-        /**
-         * 1. Fetch card data
-         */
-        $response = Http::get(
-            "https://api.tcgdex.net/v2/en/cards/" . $pokemon->pokedex_number
-        );
+        $card = $tcg->findCardByName($pokemon->name);
 
-        if ($response->failed()) {
+        if (!$card) {
+            logger()->warning('TCG card not found', [
+                'pokemon_id' => $pokemon->id,
+                'name' => $pokemon->name,
+            ]);
             return;
         }
 
-        $card = $response->json();
-
-        /**
-         * 2. Extract fields safely (NO assumptions)
-         */
-        $description = $card['description'] ?? null;
-
-        $artworkUrl = $card['image'] ?? null;
-
-        /**
-         * 3. Update Pokémon (TCG-owned fields only)
-         */
         $pokemon->update([
-            'description' => $description,
-            'artwork_url' => $artworkUrl,
-            'raw_tcgdex' => $card,
+            'description' => $card->description ?? null,
+            'artwork_url' => $card->image ?? null,
+            'raw_tcgdex' => json_decode(json_encode($card), true),
             'source_tcgdex_synced_at' => now(),
         ]);
+
+        if ($pokemon->source_pokeapi_synced_at) {
+            DownloadPokemonAssetsJob::dispatch($pokemon->id)
+                ->onQueue('assets');
+        }
     }
 }

@@ -111,9 +111,7 @@
 
             const data = await res.json();
 
-            if(data.processed_rows && data.failed_rows && data.total_rows){
-                progress = ((data.processed_rows + data.failed_rows) / data.total_rows) * 100 as number;
-            }
+            progress = data.progress_percent ?? 0;
 
             status = data.status;
 

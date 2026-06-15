@@ -65,8 +65,10 @@ class PokemonImportController extends Controller
             'total_rows' => $batch->total_rows,
             'processed_rows' => $batch->processed_rows,
             'failed_rows' => $batch->failed_rows,
-            'meta' => $batch->meta,
             'created_at' => $batch->created_at,
+            'progress_percent' => $batch->total_rows
+                ? round((($batch->processed_rows + $batch->failed_rows) / $batch->total_rows) * 100, 2)
+                : 0,
         ]);
     }
 

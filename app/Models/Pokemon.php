@@ -112,15 +112,18 @@ class Pokemon extends Model
         );
     }
 
-    public function getPokedexNumberAttribute()
+    public function getPokedexNumberAttribute($value)
     {
-        $value = $this->attributes['pokedex_number'] ?? null;
+        return $value;
+    }
 
-        if (!$value) {
+    public function getPaddedPokedexNumberAttribute(): ?string
+    {
+        if (!$this->pokedex_number) {
             return null;
         }
 
-        return str_pad($value, 4, '0', STR_PAD_LEFT);
+        return str_pad($this->pokedex_number, 4, '0', STR_PAD_LEFT);
     }
 
     public function cards()

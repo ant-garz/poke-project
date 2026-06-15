@@ -53,6 +53,7 @@ class ParsePokemonCsvRowJob implements ShouldQueue
                     'special_attack' => (int) $spAttack,
                     'special_defense' => (int) $spDefense,
                     'speed' => (int) $speed,
+                    'source_csv_imported_at' => now()
                 ]
             );
 

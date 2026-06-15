@@ -18,51 +18,66 @@ class FinalizePokemonImportBatchJob implements ShouldQueue
     {
         $batch = PokemonImportBatch::findOrFail($this->batchId);
 
-        /**
-         * STEP 1: Mark SUCCESSFUL enrichments
-         */
-        Pokemon::where('batch_id', $batch->id)
-            ->whereNotNull('source_pokeapi_synced_at')
-            ->whereNotNull('source_tcgdex_synced_at')
-            ->update([
-                'is_enriched' => true,
-            ]);
+        /*
+        |--------------------------------------------------------------------------
+        | STEP 1: Validate / normalize Pokémon enrichment state
+        |--------------------------------------------------------------------------
+        |
+        | Even though Pokémon are NOT batch-scoped, we still ensure their
+        | enrichment flags are consistent with actual API results.
+        |
+        | This acts as a safety reconciliation pass.
+        |
+        */
 
-        /**
-         * STEP 2: Mark FAILED / INCOMPLETE enrichments
-         */
-        Pokemon::where('batch_id', $batch->id)
-            ->where(function ($q) {
-                $q->whereNull('source_pokeapi_synced_at')
-                  ->orWhereNull('source_tcgdex_synced_at');
-            })
-            ->update([
-                'is_enriched' => false,
-            ]);
+        Pokemon::query()
+            ->whereNotNull('source_csv_imported_at')
+            ->chunkById(500, function ($pokemonBatch) {
+                foreach ($pokemonBatch as $pokemon) {
 
-        /**
-         * STEP 3: Recalculate batch stats from truth
-         */
-        $enrichedCount = Pokemon::where('batch_id', $batch->id)
-            ->where('is_enriched', true)
-            ->count();
+                    $isEnriched =
+                        !is_null($pokemon->source_pokeapi_synced_at) &&
+                        !is_null($pokemon->source_tcgdex_synced_at);
 
-        $failedCount = Pokemon::where('batch_id', $batch->id)
-            ->where('is_enriched', false)
-            ->count();
+                    if ($pokemon->is_enriched !== $isEnriched) {
+                        $pokemon->update([
+                            'is_enriched' => $isEnriched,
+                        ]);
+                    }
+                }
+            });
 
-        /**
-         * STEP 4: Update batch
-         */
+        /*
+        |--------------------------------------------------------------------------
+        | STEP 2: Batch progress calculation (IMPORT TRACKING ONLY)
+        |--------------------------------------------------------------------------
+        |
+        | DO NOT infer Pokémon membership from batch_id.
+        | rely entirely on batch counters (authoritative source).
+        |
+        */
+
+        $processed = ($batch->processed_rows ?? 0) + ($batch->failed_rows ?? 0);
+        $total = $batch->total_rows ?? 0;
+
+        /*
+        |--------------------------------------------------------------------------
+        | STEP 3: Update batch stats
+        |--------------------------------------------------------------------------
+        */
+
         $batch->update([
-            'processed_rows' => $enrichedCount + $failedCount,
-            'failed_rows' => $failedCount,
+            'processed_rows' => $processed,
+            'failed_rows' => $batch->failed_rows ?? 0,
         ]);
 
-        /**
-         * STEP 5: finalize batch
-         */
-        if (($enrichedCount + $failedCount) >= $batch->total_rows) {
+        /*
+        |--------------------------------------------------------------------------
+        | STEP 4: Finalize batch if complete
+        |--------------------------------------------------------------------------
+        */
+
+        if ($total > 0 && $processed >= $total) {
             $batch->update([
                 'status' => PokemonImportBatchStatus::Completed,
             ]);

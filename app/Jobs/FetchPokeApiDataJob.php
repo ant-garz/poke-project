@@ -6,6 +6,7 @@ use App\Models\Pokemon;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
+use App\Services\ExternalApi\ExternalApiLogger;
 
 class FetchPokeApiDataJob implements ShouldQueue
 {
@@ -17,16 +18,25 @@ class FetchPokeApiDataJob implements ShouldQueue
 
     public function handle(): void
     {
-        $pokemon = Pokemon::findOrFail(
-            $this->pokemonId
+        $pokemon = Pokemon::findOrFail($this->pokemonId);
+
+        $url = "https://pokeapi.co/api/v2/pokemon/{$pokemon->pokedex_number}";
+
+        $response = Http::timeout(30)->get($url);
+
+        ExternalApiLogger::log(
+            'POKEAPI',
+            $url,
+            $response,
+            ['pokemon_id' => $pokemon->id]
         );
 
-        $response = Http::timeout(30)
-            ->get(
-                "https://pokeapi.co/api/v2/pokemon/{$pokemon->pokedex_number}"
-            );
-
         if ($response->failed()) {
+            ExternalApiLogger::error('POKEAPI_FAILED', [
+                'pokemon_id' => $pokemon->id,
+                'status' => $response->status(),
+            ]);
+
             return;
         }
 
@@ -36,14 +46,10 @@ class FetchPokeApiDataJob implements ShouldQueue
             'height' => $data['height'] ?? null,
             'weight' => $data['weight'] ?? null,
             'base_experience' => $data['base_experience'] ?? null,
-
-            'raw_pokeapi' => $data,
-
+            'raw_pokeapi' => json_decode(json_encode($data), true),
             'source_pokeapi_synced_at' => now(),
         ]);
 
-        DownloadPokemonAssetsJob::dispatch(
-            $pokemon->id
-        )->onQueue('assets');
+        DownloadPokemonAssetsJob::dispatch($pokemon->id)->onQueue('assets');
     }
 }
