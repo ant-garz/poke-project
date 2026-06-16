@@ -16,6 +16,7 @@
 
     // source of truth
     let roles: string[] = [];
+    let roleError: string | null = null;
 
     /**
      * LOAD USER
@@ -41,7 +42,7 @@
      * TOGGLE ROLE (ONLY SOURCE OF TRUTH)
      */
     function toggleRole(role: string) {
-        console.log(role)
+        roleError = null;
         if (role === 'user') return;
 
         if (roles.includes(role)) {
@@ -58,6 +59,7 @@
         if (!user) return;
 
         saving = true;
+        roleError = null;
 
         try {
             const response = await fetch(`/api/v1/admin/users/${user.id}/roles`, {
@@ -67,16 +69,28 @@
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    roles: [...roles],
+                    roles: roles.filter(r => r !== 'user'),
                 }),
             });
 
             const data = await response.json();
 
-            // re-hydrate from server response (important)
+            if (!response.ok) {
+                // 🔥 THIS is the key part
+                roleError = 'Failed to update roles';
+
+                if(response.status === 403){
+                    roleError = data.message;
+                    roles=user.roles;
+                    return;
+                }
+            }
+
+            // success → rehydrate state
             roles = Array.isArray(data.roles) ? [...data.roles] : [];
             user.roles = roles;
-
+        } catch (e: any) {
+            roleError = 'Network error while updating roles';
         } finally {
             saving = false;
         }
@@ -174,6 +188,7 @@
                     <Checkbox
                         checked={roles.includes('admin')}
                         onclick={() => toggleRole('admin')}
+                        disabled={user.roles.includes('admin')}
                     />
 
                     <span class="text-sm">admin</span>
@@ -196,7 +211,11 @@
                         Save Roles
                     {/if}
                 </Button>
-
+                {#if roleError}
+                    <div class="mt-2 text-sm text-red-500">
+                        {roleError}
+                    </div>
+                {/if}
             </div>
 
             <Separator />
