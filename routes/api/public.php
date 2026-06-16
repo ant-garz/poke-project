@@ -17,7 +17,8 @@ Route::prefix('pokemon')->group(function () {
 
     Route::get('/search', [PokemonController::class, 'search']);
 
+    Route::get('/types', [TypeController::class, 'index']);
+
     Route::get('/{pokemon}', [PokemonController::class, 'show']);
 
-    Route::get('/types', [TypeController::class, 'index']);
 });

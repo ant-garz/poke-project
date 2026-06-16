@@ -10,7 +10,6 @@ class TypeController extends Controller
 {
     public function index()
     {
-        dd('test');
         return Type::all();
     }
 }
