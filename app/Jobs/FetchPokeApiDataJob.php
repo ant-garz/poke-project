@@ -50,7 +50,7 @@ class FetchPokeApiDataJob implements ShouldQueue
             'source_pokeapi_synced_at' => now(),
         ]);
 
-        DownloadPokemonAssetsJob::dispatch($pokemon->id);
+        // DownloadPokemonAssetsJob::dispatch($pokemon->id);
     }
 
     public function normalize_to_array(mixed $value): array

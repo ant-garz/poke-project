@@ -169,9 +169,11 @@ class FetchTcgdexDataJob implements ShouldQueue
             |--------------------------------------------------------------------------
             */
 
+            /*
             DownloadPokemonAssetsJob::dispatch(
                 $pokemon->id
             );
+            */
 
             Log::info('TCG sync completed', [
                 'pokemon_id' => $pokemon->id,
