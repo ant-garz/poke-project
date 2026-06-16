@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\Admin\PokemonImportController;
 use App\Http\Controllers\Api\Admin\PokemonManagementController;
+use App\Http\Controllers\Api\Admin\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,3 +30,13 @@ Route::post('/pokemon/sync/{pokemon}', [PokemonManagementController::class, 'syn
 
 Route::patch('/pokemon/{pokemon}', [PokemonManagementController::class, 'update']);
 Route::delete('/pokemon/{pokemon}', [PokemonManagementController::class, 'destroy']);
+
+Route::prefix('users')->group(function () {
+
+    Route::get('/', [UserController::class, 'index']);
+    Route::get('/{user}', [UserController::class, 'show']);
+
+    Route::delete('/{user}', [UserController::class, 'destroy']);
+    Route::post('/{user}/restore', [UserController::class, 'restore']);
+
+});

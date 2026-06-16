@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\User\FavoritePokemonController;
+use App\Http\Controllers\Api\User\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,14 +13,14 @@ use App\Http\Controllers\Api\User\FavoritePokemonController;
 /**
  * Get user's favorite Pokémon list
  */
-Route::get('/favorites', [FavoritePokemonController::class, 'index']);
+Route::get('/favorites', [UserController::class, 'favorites']);
 
 /**
  * Add Pokémon to favorites
  */
-Route::post('/favorites/{pokemon}', [FavoritePokemonController::class, 'store']);
+Route::post('/favorites/{pokemon}', [UserController::class, 'favorite']);
 
 /**
  * Remove Pokémon from favorites
  */
-Route::delete('/favorites/{pokemon}', [FavoritePokemonController::class, 'destroy']);
+Route::delete('/favorites/{pokemon}', [UserController::class, 'removeFavorite']);

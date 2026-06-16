@@ -29,8 +29,7 @@ class RoleAndPermissionsSeeder extends Seeder
             'manage pokemon',
 
             // User management
-            'view users',
-            'edit users',
+            'manage users',
 
             // Role management
             'manage roles'
@@ -62,8 +61,7 @@ class RoleAndPermissionsSeeder extends Seeder
         $adminRole->syncPermissions([
             'access admin dashboard',
             'manage pokemon',
-            'view users',
-            'edit users',
+            'manage users',
             'manage roles'
         ]);
     }

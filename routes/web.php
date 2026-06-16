@@ -6,7 +6,7 @@ use Inertia\Inertia;
 Route::inertia('/', 'Welcome')->name('home');
 
 // In order to access any route other than the landing page, the user must be logged in and have a verified email
-Route::middleware(['auth',])->group(function () {
+Route::middleware(['auth','verified'])->group(function () {
 
     Route::inertia('/dashboard', 'Dashboard')
         ->name('dashboard');
@@ -20,26 +20,30 @@ Route::middleware(['auth',])->group(function () {
             Route::inertia('/', 'admin/Dashboard')
                 ->name('index');
 
-            Route::inertia('/users', 'admin/Users')
-                ->middleware('permission:view users')
-                ->name('users');
+            Route::prefix('users')->group(function () {
+                Route::inertia('/', 'admin/users/Users')
+                    ->name('users');
+
+                Route::get('/{user}', function (App\Models\User $user) {
+                    return Inertia::render('admin/users/User', [
+                        'userId' => $user->id,
+                    ]);
+                })->name('admin.users.show');
+
+            })->middleware('permission:manage users');
 
             Route::inertia('/roles', 'admin/Roles')
                 ->middleware('permission:manage roles')
                 ->name('roles');
 
             Route::prefix('pokemon')->group(function () {
-
                 Route::inertia('/', 'admin/pokemon/Index')
-                    ->middleware('permission:manage pokemon')
                     ->name('pokemon.index');
 
                 Route::inertia('/import', 'admin/pokemon/Import')
-                    ->middleware('permission:manage pokemon')
                     ->name('pokemon.import');
 
                 Route::inertia('/batches', 'admin/pokemon/Batches')
-                    ->middleware('permission:manage pokemon')
                     ->name('pokemon.batches');
 
                 Route::get('/batches/{batch}', function ($batch) {
@@ -47,13 +51,11 @@ Route::middleware(['auth',])->group(function () {
                         'id' => (int) $batch,
                     ]);
                 })
-                ->middleware('permission:manage pokemon')
                 ->name('pokemon.batches.show');
 
                 Route::inertia('/manage', 'admin/pokemon/Manage')
-                    ->middleware('permission:manage pokemon')
                     ->name('pokemon.manage');
-            });
+            })->middleware('permission:manage pokemon');
         });
 });
 
