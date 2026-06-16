@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Pokemon;
-use App\Services\PokemonAssetDownloader;
+use App\Services\ExternalApi\PokemonAssetDownloader;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 

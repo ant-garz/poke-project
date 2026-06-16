@@ -73,6 +73,15 @@ class Pokemon extends Model
         ];
     }
 
+    protected $appends = [
+        'artwork_url',
+    ];
+
+    protected $hidden = [
+        'raw_pokeapi',
+        'raw_tcgdex',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | Relationships
@@ -134,5 +143,16 @@ class Pokemon extends Model
     public function cards()
     {
         return $this->morphMany(Card::class, 'cardable');
+    }
+
+    public function getArtworkUrlAttribute(): ?string
+    {
+        $value = $this->attributes['artwork_url'] ?? null;
+
+        if (empty($value)) {
+            return null;
+        }
+
+        return rtrim($value, '/') . '/low.webp';
     }
 }

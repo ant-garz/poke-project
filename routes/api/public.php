@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PokemonController;
+use App\Http\Controllers\Api\TypeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -10,8 +11,13 @@ use App\Http\Controllers\Api\PokemonController;
 | No auth required (or optionally add throttle middleware later)
 */
 
-Route::get('/pokemon', [PokemonController::class, 'index']);
+Route::prefix('pokemon')->group(function () {
 
-Route::get('/pokemon/search', [PokemonController::class, 'search']);
+    Route::get('/', [PokemonController::class, 'index']);
 
-Route::get('/pokemon/{pokemon}', [PokemonController::class, 'show']);
+    Route::get('/search', [PokemonController::class, 'search']);
+
+    Route::get('/{pokemon}', [PokemonController::class, 'show']);
+
+    Route::get('/types', [TypeController::class, 'index']);
+});

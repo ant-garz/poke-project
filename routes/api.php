@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 | Public API
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1')->group(function () {
+Route::prefix('v1/public')->group(function () {
     require __DIR__ . '/api/public.php';
 });
 
