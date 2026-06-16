@@ -31,7 +31,17 @@ class FetchTcgdexDataJob implements ShouldQueue
             |--------------------------------------------------------------------------
             */
 
-            $card = $tcg->findCardByName($pokemon->name);
+            $cardBrief = $tcg->findCardByName($pokemon->name);
+
+            if (! $cardBrief) {
+                return;
+            }
+
+            $card = $tcg->getCard($cardBrief->id);
+
+            if (! $card) {
+                return;
+            }
 
             if (! $card) {
 
@@ -52,7 +62,7 @@ class FetchTcgdexDataJob implements ShouldQueue
             $pokemon->update([
                 'description' => $card->description ?? null,
                 'artwork_url' => $card->image ?? null,
-                'raw_tcgdex' =>  json_encode($this->normalize_to_array($card), JSON_THROW_ON_ERROR),
+                'raw_tcgdex' =>  $this->normalize_to_array($card),
 
                 'source_tcgdex_synced_at' => now(),
             ]);
@@ -101,7 +111,7 @@ class FetchTcgdexDataJob implements ShouldQueue
                     'source_tcgdex_id' => (string) $card->id,
                 ],
                 [
-                    // ✅ SAFE nullable FK
+                    // SAFE nullable FK
                     'card_set_id' => $set?->id,
 
                     'cardable_id' => $pokemon->id,
@@ -120,11 +130,8 @@ class FetchTcgdexDataJob implements ShouldQueue
 
                     'supertype' => 'Pokémon',
 
-                    // ✅ ALWAYS safe JSON
-                    'raw_data' => json_encode(
-                        json_decode(json_encode($card), true),
-                        JSON_THROW_ON_ERROR
-                    ),
+                    // ALWAYS safe JSON
+                    'raw_data' => $this->normalize_to_array($card),
                 ]
             );
 
@@ -164,7 +171,7 @@ class FetchTcgdexDataJob implements ShouldQueue
 
             DownloadPokemonAssetsJob::dispatch(
                 $pokemon->id
-            )->onQueue('assets');
+            );
 
             Log::info('TCG sync completed', [
                 'pokemon_id' => $pokemon->id,
@@ -193,7 +200,10 @@ class FetchTcgdexDataJob implements ShouldQueue
         }
 
         if (is_object($value)) {
-            return json_decode(json_encode($value), true) ?? [];
+            return json_decode(
+                json_encode($value),
+                true
+            ) ?? [];
         }
 
         return [];

@@ -46,6 +46,9 @@ class Pokemon extends Model
 
         'primary_type_id',
         'secondary_type_id',
+
+        'raw_pokeapi',
+        'raw_tcgdex'
     ];
 
     protected static function booted()

@@ -27,9 +27,13 @@ class Card extends Model
         'raw_data',
     ];
 
-    protected $casts = [
-        'subtypes' => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'subtypes' => 'array',
+            'raw_data' => 'array',
+        ];
+    }
 
     public function cardable(): MorphTo
     {
