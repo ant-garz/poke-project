@@ -1,8 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
-
+use Inertia\Inertia;
 
 Route::inertia('/', 'Welcome')->name('home');
 
@@ -43,9 +42,13 @@ Route::middleware(['auth',])->group(function () {
                     ->middleware('permission:manage pokemon')
                     ->name('pokemon.batches');
 
-                Route::inertia('/batches/{batch}', 'admin/pokemon/Batch')
-                    ->middleware('permission:manage pokemon')
-                    ->name('pokemon.batches.show');
+                Route::get('/batches/{batch}', function ($batch) {
+                    return Inertia::render('admin/pokemon/Batch', [
+                        'id' => (int) $batch,
+                    ]);
+                })
+                ->middleware('permission:manage pokemon')
+                ->name('pokemon.batches.show');
 
                 Route::inertia('/manage', 'admin/pokemon/Manage')
                     ->middleware('permission:manage pokemon')
