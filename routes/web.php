@@ -32,10 +32,6 @@ Route::middleware(['auth','verified'])->group(function () {
 
             })->middleware('permission:manage users');
 
-            Route::inertia('/roles', 'admin/Roles')
-                ->middleware('permission:manage roles')
-                ->name('roles');
-
             Route::prefix('pokemon')->group(function () {
                 Route::inertia('/', 'admin/pokemon/Index')
                     ->name('pokemon.index');

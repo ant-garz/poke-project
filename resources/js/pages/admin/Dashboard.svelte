@@ -13,9 +13,6 @@
             Manage Users
         </a>
 
-        <a href="/admin/roles" class="block rounded border p-4 hover:bg-gray-50 dark:hover:bg-gray-800 w-75 mx-auto">
-            Manage Roles
-        </a>
     </div>
 {:else}
     <p class="text-red-500 mt-4">

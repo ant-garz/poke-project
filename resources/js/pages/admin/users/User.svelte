@@ -1,183 +1,253 @@
 <script lang="ts">
     import { onMount } from 'svelte';
 
+    import { Button } from '@/components/ui/button';
+    import { Card } from '@/components/ui/card';
+    import { Checkbox } from '@/components/ui/checkbox';
+    import { Separator } from '@/components/ui/separator';
+    import { Badge } from '@/components/ui/badge';
+    import { Spinner } from '@/components/ui/spinner';
+
     export let userId: number;
 
     let user: any = null;
     let loading = true;
     let saving = false;
 
+    // source of truth
+    let roles: string[] = [];
+
+    /**
+     * LOAD USER
+     */
     async function load() {
         loading = true;
-        console.log('userId', userId);
-        const response = await fetch(
-            `/api/v1/admin/users/${userId}`,
-            {
-                credentials: 'include',
-            }
-        );
 
-        user = await response.json();
+        const response = await fetch(`/api/v1/admin/users/${userId}`, {
+            credentials: 'include',
+        });
+
+        const data = await response.json();
+
+        user = data;
+        roles = Array.isArray(data.roles) ? [...data.roles] : [];
 
         loading = false;
     }
 
-    async function softDelete() {
-        saving = true;
-
-        await fetch(`/api/v1/admin/users/${user.id}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-
-        await load();
-
-        saving = false;
-    }
-
-    async function restoreUser() {
-        saving = true;
-
-        await fetch(`/api/v1/admin/users/${user.id}/restore`, {
-            method: 'PATCH',
-            credentials: 'include',
-        });
-
-        await load();
-
-        saving = false;
-    }
-
     onMount(load);
+
+    /**
+     * TOGGLE ROLE (ONLY SOURCE OF TRUTH)
+     */
+    function toggleRole(role: string) {
+        console.log(role)
+        if (role === 'user') return;
+
+        if (roles.includes(role)) {
+            roles = roles.filter((r) => r !== role);
+        } else {
+            roles = [...roles, role];
+        }
+    }
+
+    /**
+     * SAVE ROLES
+     */
+    async function saveRoles() {
+        if (!user) return;
+
+        saving = true;
+
+        try {
+            const response = await fetch(`/api/v1/admin/users/${user.id}/roles`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    roles: [...roles],
+                }),
+            });
+
+            const data = await response.json();
+
+            // re-hydrate from server response (important)
+            roles = Array.isArray(data.roles) ? [...data.roles] : [];
+            user.roles = roles;
+
+        } finally {
+            saving = false;
+        }
+    }
+
+    /**
+     * SOFT DELETE
+     */
+    async function softDelete() {
+        if (!user) return;
+
+        saving = true;
+
+        try {
+            await fetch(`/api/v1/admin/users/${user.id}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            });
+
+            await load();
+        } finally {
+            saving = false;
+        }
+    }
+
+    /**
+     * RESTORE
+     */
+    async function restoreUser() {
+        if (!user) return;
+
+        saving = true;
+
+        try {
+            await fetch(`/api/v1/admin/users/${user.id}/restore`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+
+            await load();
+        } finally {
+            saving = false;
+        }
+    }
 </script>
 
-<div class="space-y-6">
+{#if loading}
 
-    {#if loading}
+    <div class="flex items-center gap-2 text-sm text-muted-foreground">
+        <Spinner class="h-4 w-4" />
+        Loading user...
+    </div>
 
-        <div class="text-sm text-gray-500">
-            Loading user...
+{:else if user}
+
+    <div class="space-y-6 ml-3">
+
+        <!-- HEADER -->
+        <div>
+            <h1 class="text-2xl font-semibold">{user.name}</h1>
+            <p class="text-sm text-muted-foreground">{user.email}</p>
         </div>
 
-    {:else}
+        <Card class="p-6 space-y-6">
+
+            <!-- USER INFO -->
+            <div class="space-y-1">
+                <div class="text-xs uppercase text-muted-foreground">
+                    User Info
+                </div>
+
+                <div class="text-sm space-y-1">
+                    <div><strong>Name:</strong> {user.name}</div>
+                    <div><strong>Email:</strong> {user.email}</div>
+                </div>
+            </div>
+
+            <Separator />
+
+            <!-- ROLES -->
+            <div class="space-y-3">
+
+                <div class="text-xs uppercase text-muted-foreground">
+                    Roles
+                </div>
+
+                <!-- BASE ROLE -->
+                <div class="flex items-center gap-2">
+                    <Checkbox checked disabled />
+                    <span class="text-sm">user (required)</span>
+                </div>
+
+                <!-- ADMIN ROLE -->
+                <div class="flex items-center gap-2">
+                    <Checkbox
+                        checked={roles.includes('admin')}
+                        onclick={() => toggleRole('admin')}
+                    />
+
+                    <span class="text-sm">admin</span>
+
+                    {#if user.roles.includes('admin')}
+                        <Badge variant="secondary">active</Badge>
+                    {/if}
+                </div>
+
+                <Button
+                    type="button"
+                    onclick={saveRoles}
+                    disabled={saving}
+                    class="mt-2"
+                >
+                    {#if saving}
+                        <Spinner class="mr-2 h-4 w-4" />
+                        Saving...
+                    {:else}
+                        Save Roles
+                    {/if}
+                </Button>
+
+            </div>
+
+            <Separator />
+
+            <!-- ACCOUNT STATUS -->
+            <div class="space-y-3">
+
+                <div class="text-xs uppercase text-muted-foreground">
+                    Account Status
+                </div>
+
+                {#if user.deleted_at}
+
+                    <div class="text-sm text-red-500">
+                        Deleted at: {user.deleted_at}
+                    </div>
+
+                    <Button
+                        type="button"
+                        onclick={restoreUser}
+                        disabled={saving}
+                    >
+                        Restore User
+                    </Button>
+
+                {:else}
+
+                    <div class="text-sm text-green-600">
+                        Active
+                    </div>
+
+                    <Button
+                        type="button"
+                        onclick={softDelete}
+                        disabled={saving}
+                    >
+                        Delete User
+                    </Button>
+
+                {/if}
+
+            </div>
+
+        </Card>
 
         <div>
-
-            <h1 class="text-2xl font-semibold">
-                {user.name}
-            </h1>
-
-            <p class="text-sm text-gray-500">
-                User Details
-            </p>
-
-        </div>
-
-        <div class="rounded border p-6 space-y-6">
-
-            <div>
-
-                <div class="text-xs uppercase text-gray-500">
-                    Name
-                </div>
-
-                <div class="font-medium">
-                    {user.name}
-                </div>
-
-            </div>
-
-            <div>
-
-                <div class="text-xs uppercase text-gray-500">
-                    Email
-                </div>
-
-                <div class="font-medium">
-                    {user.email}
-                </div>
-
-            </div>
-
-            <div class="border-t pt-4 space-y-2">
-
-            <div class="text-xs uppercase text-gray-500">
-                Roles
-            </div>
-
-            {#if user.roles.length > 0}
-
-                <div class="flex flex-wrap gap-2">
-
-                    {#each user.roles as role}
-                        <span class="px-2 py-1 text-xs rounded bg-gray-100 dark:bg-gray-800">
-                            {role}
-                        </span>
-                    {/each}
-
-                </div>
-
-            {:else}
-
-                <div class="text-sm text-gray-500">
-                    No roles assigned
-                </div>
-
-            {/if}
-
-        </div>
-
-        <div class="border-t pt-4 space-y-3">
-
-            <div class="text-xs uppercase text-gray-500">
-                Account Status
-            </div>
-
-            {#if user.deleted_at}
-
-                <div class="text-sm text-red-500">
-                    Deleted at: {user.deleted_at}
-                </div>
-
-                <button
-                    class="px-3 py-1 text-sm rounded bg-green-600 text-white"
-                    on:click={restoreUser}
-                    disabled={saving}
-                >
-                    Restore User
-                </button>
-
-            {:else}
-
-                <div class="text-sm text-green-600">
-                    Active
-                </div>
-
-                <button
-                    class="px-3 py-1 text-sm rounded bg-red-600 text-white"
-                    on:click={softDelete}
-                    disabled={saving}
-                >
-                    Soft Delete User
-                </button>
-
-            {/if}
-
-        </div>
-
-        </div>
-
-        <div>
-
-            <a
-                href="/admin/users"
-                class="text-sm hover:underline"
-            >
+            <a href="/admin/users" class="text-sm hover:underline">
                 ← Back to Users
             </a>
-
         </div>
 
-    {/if}
+    </div>
 
-</div>
+{/if}

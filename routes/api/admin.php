@@ -39,4 +39,5 @@ Route::prefix('users')->group(function () {
     Route::delete('/{user}', [UserController::class, 'destroy']);
     Route::post('/{user}/restore', [UserController::class, 'restore']);
 
+    Route::put('/{user}/roles', [UserController::class, 'updateRoles']);
 });
