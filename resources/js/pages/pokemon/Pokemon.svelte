@@ -41,6 +41,14 @@
 
         return 'bg-red-500';
     };
+
+    let audioEl;
+
+	function playAudio() {
+		audioEl.play().catch(error => {
+			console.error("Playback failed:", error);
+		});
+	}
 </script>
 
 <svelte:head>
@@ -65,7 +73,7 @@
                     <div class="flex flex-col gap-6 md:flex-row">
                         <div class="flex justify-center md:w-72">
                             <img
-                                src={pokemon.artwork_url}
+                                src={pokemon.pokeapi_artwork_url}
                                 alt={pokemon.name}
                                 class="max-h-72 rounded-lg"
                             />
@@ -99,6 +107,12 @@
                                     </Badge>
                                 {/if}
                             </div>
+
+                            <button onclick={playAudio}>
+                                Play Audio
+                            </button>
+
+                            <audio bind:this={audioEl} src={pokemon.cry_url}></audio>
 
                             <Separator class="my-4" />
 

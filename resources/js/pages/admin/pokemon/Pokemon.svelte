@@ -24,6 +24,14 @@
 
     let pokemon = $state<any>(null);
 
+    let audioEl;
+
+    function playAudio() {
+        audioEl.play().catch(error => {
+            console.error("Playback failed:", error);
+        });
+    }
+
     async function fetchPokemon() {
         loading = true;
 
@@ -97,7 +105,7 @@
             <CardContent class="p-6">
                 <div class="flex gap-6">
                     <img
-                        src={pokemon.artwork_url}
+                        src={pokemon.pokeapi_artwork_url}
                         class="h-40 w-40 object-contain"
                     />
 
@@ -108,12 +116,30 @@
 
                         <div class="flex gap-2 flex-wrap">
                             {#if pokemon.primary_type}
-                                <Badge>{pokemon.primary_type.name}</Badge>
+                                <Badge
+                                    style={`background-color:${pokemon.primary_type.color};color:${pokemon.primary_type.text_color}`}
+                                    class="font-medium"
+                                >
+                                    {pokemon.primary_type.name}
+                                </Badge>
                             {/if}
                             {#if pokemon.secondary_type}
-                                <Badge>{pokemon.secondary_type.name}</Badge>
+                                <Badge
+                                style={`background-color:${pokemon.secondary_type.color};color:${pokemon.secondary_type.text_color}`}
+                                class="font-medium"
+                                >
+                                {pokemon.secondary_type.name}
+                                </Badge>
                             {/if}
                         </div>
+
+                        <button onclick={playAudio}>
+                            Play Audio
+                        </button>
+
+                        <audio bind:this={audioEl} src={pokemon.cry_url}></audio>
+
+                        <Separator class="my-4" />
 
                         <div class="flex gap-2 mt-4 flex-wrap">
 
@@ -156,26 +182,42 @@
 
             <CardContent class="space-y-4">
 
-                <div class="grid md:grid-cols-2 gap-4">
+                <div class="grid md:grid-cols-1 gap-4">
 
+                    <label class="w-50" for="Name">Name:</label>
                     <Input bind:value={pokemon.name} placeholder="Name" />
+                    <label class="w-50" for="Slug">Slug:</label>
                     <Input bind:value={pokemon.slug} placeholder="Slug" />
 
+                    <label class="w-50" for="HP">HP:</label>
                     <Input type="number" bind:value={pokemon.hp} placeholder="HP" />
+                    <label class="w-50" for="Attack">Attack:</label>
                     <Input type="number" bind:value={pokemon.attack} placeholder="Attack" />
+                    <label class="w-50" for="Defense">Defense:</label>
                     <Input type="number" bind:value={pokemon.defense} placeholder="Defense" />
+                    <label class="w-50" for="Sp. Attack">Sp. Attack:</label>
                     <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" />
+                    <label class="w-50" for="Sp. Defense">Sp. Defense:</label>
                     <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" />
+                    <label class="w-50" for="Speed">Speed:</label>
                     <Input type="number" bind:value={pokemon.speed} placeholder="Speed" />
 
+
+                    <label class="w-50" for="Height">Height:</label>
                     <Input type="number" bind:value={pokemon.height} placeholder="Height" />
+                    <label class="w-50" for="Weight">Weight:</label>
                     <Input type="number" bind:value={pokemon.weight} placeholder="Weight" />
+                    <label class="w-50" for="Base XP">Base XP:</label>
                     <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" />
 
+                    <label class="w-50" for="Sprite URL">Sprite URL:</label>
                     <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" />
-                    <Input bind:value={pokemon.artwork_url} placeholder="Artwork URL" />
+                    <label class="w-50" for="PokeApi Artwork URL">PokeApi Artwork URL:</label>
+                    <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokeApi Artwork URL" />
+                    <label class="w-50" for="Tcgdex Artwork URL">Tcgdex Artwork URL:</label>
+                    <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="Tcgdex Artwork URL" />
+                    <label class="w-50" for="Cry URL">Cry URL:</label>
                     <Input bind:value={pokemon.cry_url} placeholder="Cry URL" />
-
                 </div>
 
                 <textarea

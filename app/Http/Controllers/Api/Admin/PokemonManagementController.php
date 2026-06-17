@@ -59,23 +59,51 @@ class PokemonManagementController extends Controller
     public function update(Request $request, Pokemon $pokemon)
     {
         $data = $request->validate([
+
+            // identity
             'name' => ['sometimes', 'string'],
+            'slug' => ['sometimes', 'string'],
+            'pokedex_number' => ['sometimes', 'integer'],
+
+            // structure
+            'is_default' => ['sometimes', 'boolean'],
+            'base_pokemon_id' => ['nullable', 'integer'],
+
+            // stats
             'hp' => ['sometimes', 'integer'],
             'attack' => ['sometimes', 'integer'],
             'defense' => ['sometimes', 'integer'],
             'special_attack' => ['sometimes', 'integer'],
             'special_defense' => ['sometimes', 'integer'],
             'speed' => ['sometimes', 'integer'],
+
+            // meta
+            'height' => ['nullable', 'integer'],
+            'weight' => ['nullable', 'integer'],
+            'base_experience' => ['nullable', 'integer'],
+
+            // text
             'description' => ['nullable', 'string'],
+
+            // media (manual override only, optional admin control)
             'sprite_url' => ['nullable', 'string'],
-            'artwork_url' => ['nullable', 'string'],
+            'pokeapi_artwork_url' => ['nullable', 'string'],
+            'tcgdex_artwork_base_url' => ['nullable', 'string'],
+            'cry_url' => ['nullable', 'string'],
+
+            // types
+            'primary_type_id' => ['nullable', 'integer'],
+            'secondary_type_id' => ['nullable', 'integer'],
         ]);
 
         $pokemon->update($data);
 
         return response()->json([
             'message' => 'Pokemon updated',
-            'pokemon' => $pokemon->fresh()
+            'pokemon' => $pokemon->fresh()->load([
+                'primaryType',
+                'secondaryType'
+            ])
         ]);
     }
 

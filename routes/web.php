@@ -43,11 +43,11 @@ Route::middleware(['auth','verified'])->group(function () {
                 Route::inertia('/manage', 'admin/pokemon/Manage')
                     ->name('pokemon.manage');
 
-                Route::inertia('/{pokemon}', 'admin/pokemon/Pokemon')
-                    ->name('pokemon.admin.show');
-
                 Route::inertia('/import', 'admin/pokemon/Import')
                     ->name('pokemon.import');
+
+                Route::inertia('/{pokemon}', 'admin/pokemon/Pokemon')
+                    ->name('pokemon.admin.show');
 
                 Route::inertia('/batches', 'admin/pokemon/Batches')
                     ->name('pokemon.batches');

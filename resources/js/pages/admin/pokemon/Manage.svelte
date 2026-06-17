@@ -120,9 +120,9 @@
                             </td>
 
                             <td class="p-2">
-                                {#if p.artwork_url}
+                                {#if p.pokeapi_artwork_url}
                                     <img
-                                        src={p.artwork_url}
+                                        src={p.pokeapi_artwork_url}
                                         class="w-10 h-10 object-contain"
                                         loading="lazy"
                                     />

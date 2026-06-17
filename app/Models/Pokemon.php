@@ -37,7 +37,8 @@ class Pokemon extends Model
         'description',
 
         'sprite_url',
-        'artwork_url',
+        'pokeapi_artwork_url',
+        'tcgdex_artwork_base_url',
         'cry_url',
 
         'source_csv_imported_at',
@@ -74,7 +75,7 @@ class Pokemon extends Model
     }
 
     protected $appends = [
-        'artwork_url',
+        'official_artwork_url',
     ];
 
     protected $hidden = [
@@ -145,14 +146,17 @@ class Pokemon extends Model
         return $this->morphMany(Card::class, 'cardable');
     }
 
-    public function getArtworkUrlAttribute(): ?string
+    public function getOfficialArtworkUrlAttribute(): ?string
     {
-        $value = $this->attributes['artwork_url'] ?? null;
+        return $this->pokeapi_artwork_url;
+    }
 
-        if (empty($value)) {
+    public function getTcgdexArtworkUrlAttribute(): ?string
+    {
+        if (!$this->tcgdex_artwork_base_url) {
             return null;
         }
 
-        return rtrim($value, '/') . '/low.webp';
+        return $this->tcgdex_artwork_base_url;
     }
 }

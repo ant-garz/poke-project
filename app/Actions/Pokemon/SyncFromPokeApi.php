@@ -38,7 +38,7 @@ class SyncFromPokeApi
             // visuals
             'sprite_url' => $sprites['front_default'] ?? null,
 
-            'artwork_url' =>
+            'pokeapi_artwork_url' =>
                 $other['official-artwork']['front_default']
                 ?? $other['home']['front_default']
                 ?? null,

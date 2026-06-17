@@ -159,9 +159,9 @@
                             </td>
 
                             <td class="p-2">
-                                {#if p.artwork_url}
+                                {#if p.sprite_url}
                                     <img
-                                        src={p.artwork_url}
+                                        src={p.sprite_url}
                                         alt={p.name}
                                         class="w-10 h-10 object-contain"
                                         loading="lazy"

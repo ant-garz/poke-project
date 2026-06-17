@@ -39,7 +39,7 @@ class SyncFromTcgdex
         */
         $pokemon->update([
             'description' => $data['description'] ?? null,
-            'artwork_url' => $data['image'] ?? null,
+            'tcgdex_artwork_base_url' => $data['image'] ?? null,
             'raw_tcgdex' => $data,
             'source_tcgdex_synced_at' => now(),
         ]);
