@@ -11,6 +11,10 @@ Route::middleware(['auth','verified'])->group(function () {
     Route::inertia('/dashboard', 'Dashboard')
         ->name('dashboard');
 
+    
+    Route::inertia('/pokemon/{pokemon}', 'pokemon/Pokemon')
+        ->name('pokemon.show');
+
     // "manage" is an umbrella permission name to represent full CRUD (Create, Read, Update, Delete) privileges over a specific resource or module
     Route::prefix('admin')
         ->name('admin.')

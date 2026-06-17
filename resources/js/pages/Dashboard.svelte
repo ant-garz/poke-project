@@ -150,7 +150,9 @@
                 {:else}
 
                     {#each pokemon as p}
-                        <tr class="border-b hover:bg-muted/50 transition">
+                        <tr class="border-b hover:bg-muted/50 transition" onclick={()=> {
+                            window.location.href="/pokemon/" + p.id
+                        }}>
 
                             <td class="p-2">
                                 {p.pokedex_number}
@@ -195,7 +197,7 @@
     <div class="flex items-center gap-2">
 
         <Button
-            on:click={() => {
+            onclick={() => {
                 if (meta?.prev_page_url) {
                     fetchPokemon(meta.prev_page_url);
                 }
@@ -210,7 +212,7 @@
         </span>
 
         <Button
-            on:click={() => {
+            onclick={() => {
                 if (meta?.next_page_url) {
                     fetchPokemon(meta.next_page_url);
                 }
