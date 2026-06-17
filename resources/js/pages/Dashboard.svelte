@@ -1,6 +1,9 @@
 <script module lang="ts">
     import { dashboard } from '@/routes';
 
+    import TypeFilterButton from '@/components/pokemon/TypeFilterButton.svelte';
+    import TypeFilterModal from '@/components/pokemon/TypePickerModal.svelte';
+
     export const layout = {
         breadcrumbs: [
             {
@@ -88,39 +91,37 @@
 <div class="flex flex-col gap-4 p-4">
 
     <!-- FILTER BAR -->
-    <Card class="p-4 flex gap-2 items-center flex-wrap">
+    <Card class="p-4 space-y-3">
 
-        <Input
-            placeholder="Search Pokémon..."
-            bind:value={search}
-            class="w-64"
-        />
+        <!-- ROW 1 -->
+        <div class="flex gap-2 items-center">
+            <div class="flex-1">
+                <Input
+                    placeholder="Search Pokémon..."
+                    bind:value={search}
+                    class="w-full"
+                />
+            </div>
 
-        <!-- PRIMARY TYPE -->
-        <Select bind:value={primaryType}>
-            <option value="">Primary Type</option>
+            <Button onclick={() => fetchPokemon()}>
+                Search
+            </Button>
+        </div>
 
-            {#each types as t}
-                <option value={t.id}>
-                    {t.name}
-                </option>
-            {/each}
-        </Select>
+        <!-- ROW 2 -->
+        <div class="flex gap-2 items-center flex-wrap">
+            <TypeFilterButton
+                label="Primary Type"
+                bind:value={primaryType}
+                on:change={() => fetchPokemon()}
+            />
 
-        <!-- SECONDARY TYPE -->
-        <Select bind:value={secondaryType}>
-            <option value="">Secondary Type</option>
-
-            {#each types as t}
-                <option value={t.id}>
-                    {t.name}
-                </option>
-            {/each}
-        </Select>
-
-        <Button onclick={() => fetchPokemon()}>
-            Search
-        </Button>
+            <TypeFilterButton
+                label="Secondary Type"
+                bind:value={secondaryType}
+                on:change={() => fetchPokemon()}
+            />
+        </div>
 
     </Card>
 

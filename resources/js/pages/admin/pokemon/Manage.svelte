@@ -1,6 +1,8 @@
 <script module lang="ts">
     import { dashboard } from '@/routes';
 
+    import TypeFilterButton from '@/components/pokemon/TypeFilterButton.svelte';
+
     export const layout = {
         breadcrumbs: [
             {
@@ -72,20 +74,39 @@
 <div class="flex flex-col gap-4 p-4">
 
     <!-- FILTER BAR -->
-    <Card class="p-4 flex gap-2 items-center flex-wrap">
+    <Card class="p-4 space-y-3">
 
-        <Input
-            placeholder="Search Pokémon..."
-            bind:value={search}
-            class="w-64"
-        />
+        <!-- ROW 1 -->
+        <div class="flex gap-2 items-center">
+            <div class="flex-1">
+                <Input
+                    placeholder="Search Pokémon..."
+                    bind:value={search}
+                    class="w-full"
+                />
+            </div>
 
-        <Button onclick={() => fetchPokemon()}>
-            Search
-        </Button>
+            <Button onclick={() => fetchPokemon()}>
+                Search
+            </Button>
+        </div>
+
+        <!-- ROW 2 -->
+        <div class="flex gap-2 items-center flex-wrap">
+            <TypeFilterButton
+                label="Primary Type"
+                bind:value={primaryType}
+                on:change={() => fetchPokemon()}
+            />
+
+            <TypeFilterButton
+                label="Secondary Type"
+                bind:value={secondaryType}
+                on:change={() => fetchPokemon()}
+            />
+        </div>
 
     </Card>
-
     <!-- TABLE -->
     <Card class="p-4 overflow-x-auto">
 

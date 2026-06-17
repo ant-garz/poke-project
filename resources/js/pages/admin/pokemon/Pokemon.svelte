@@ -107,6 +107,7 @@
                     <img
                         src={pokemon.pokeapi_artwork_url}
                         class="h-40 w-40 object-contain"
+                        alt={pokemon.name}
                     />
 
                     <div class="flex-1 space-y-2">
@@ -133,9 +134,9 @@
                             {/if}
                         </div>
 
-                        <button onclick={playAudio}>
+                        <Button onclick={playAudio}>
                             Play Audio
-                        </button>
+                        </Button>
 
                         <audio bind:this={audioEl} src={pokemon.cry_url}></audio>
 

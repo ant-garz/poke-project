@@ -7,6 +7,7 @@
     import CardTitle from '@/components/ui/card/CardTitle.svelte';
     import CardDescription from '@/components/ui/card/CardDescription.svelte';
     import CardContent from '@/components/ui/card/CardContent.svelte';
+    import Button from '@/components/ui/button/Button.svelte';
 
     import Badge from '@/components/ui/badge/Badge.svelte';
 
@@ -108,9 +109,9 @@
                                 {/if}
                             </div>
 
-                            <button onclick={playAudio}>
+                            <Button onclick={playAudio}>
                                 Play Audio
-                            </button>
+                            </Button>
 
                             <audio bind:this={audioEl} src={pokemon.cry_url}></audio>
 
