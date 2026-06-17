@@ -11,6 +11,14 @@ class PokemonController extends Controller
     public function index(Request $request)
     {
         $query = Pokemon::query()
+            ->select([
+                'id',
+                'name',
+                'pokedex_number',
+                'primary_type_id',
+                'secondary_type_id',
+                'sprite_url',
+            ])
             ->with(['primaryType', 'secondaryType']);
 
         // Name search

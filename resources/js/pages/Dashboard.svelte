@@ -34,8 +34,8 @@
     let loading = false;
 
     let search = '';
-    let primaryType = '';
-    let secondaryType = '';
+    let primaryType: any = null;
+    let secondaryType: any = null;
 
     let page = 1;
     let meta: any = null;
@@ -56,8 +56,13 @@
         }
 
         if (search) params.append('search', search);
-        if (primaryType) params.append('primary_type', primaryType);
-        if (secondaryType) params.append('secondary_type', secondaryType);
+        if (primaryType?.id) {
+            params.append('primary_type', primaryType.id.toString());
+        }
+
+        if (secondaryType?.id) {
+            params.append('secondary_type', secondaryType.id.toString());
+        }
 
         const res = await fetch(`${endpoint}${url ? '' : '?' + params.toString()}`);
         const json = await res.json();
