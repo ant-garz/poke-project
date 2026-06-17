@@ -24,12 +24,15 @@ Route::get('/pokemon/import/{batch}', [PokemonImportController::class, 'show']);
 // full detail page
 Route::get('/pokemon/import/batches/{batch}', [PokemonImportController::class, 'detail']);
 
-// manual controls (existing)
-Route::post('/pokemon/reprocess', [PokemonManagementController::class, 'reprocess']);
-Route::post('/pokemon/sync/{pokemon}', [PokemonManagementController::class, 'sync']);
+Route::prefix('pokemon')->group(function () {
 
-Route::patch('/pokemon/{pokemon}', [PokemonManagementController::class, 'update']);
-Route::delete('/pokemon/{pokemon}', [PokemonManagementController::class, 'destroy']);
+    Route::post('/{pokemon}/sync/pokeapi', [PokemonManagementController::class, 'syncPokeApi']);
+    Route::post('/{pokemon}/sync/tcgdex', [PokemonManagementController::class, 'syncTcgdex']);
+    Route::post('/{pokemon}/sync/all', [PokemonManagementController::class, 'syncAll']);
+
+    Route::patch('/{pokemon}', [PokemonManagementController::class, 'update']);
+    Route::delete('/{pokemon}', [PokemonManagementController::class, 'destroy']);
+});
 
 Route::prefix('users')->group(function () {
 

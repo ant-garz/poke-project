@@ -8,33 +8,46 @@ use App\Jobs\EnrichPokemonFromExternalApisJob;
 use App\Models\Pokemon;
 use Illuminate\Http\Request;
 
+use App\Actions\Pokemon\SyncFromPokeApi;
+use App\Actions\Pokemon\SyncFromTcgdex;
+
 class PokemonManagementController extends Controller
 {
-    /**
-     * POST /pokemon/reprocess
-     * Re-run full ingestion pipeline manually
-     */
-    public function reprocess()
-    {
-        // You might later pass a batch ID or scope
-        ImportPokemonCsvJob::dispatch();
+
+    public function syncPokeApi(
+        Pokemon $pokemon,
+        SyncFromPokeApi $action
+    ) {
+        $action->execute($pokemon->id);
 
         return response()->json([
-            'message' => 'Reprocessing job dispatched'
+            'message' => 'PokeAPI sync completed',
+            'pokemon_id' => $pokemon->id
         ]);
     }
 
-    /**
-     * POST /pokemon/sync/{pokemon}
-     * Force re-fetch external API enrichment
-     */
-    public function sync(Pokemon $pokemon)
-    {
-        EnrichPokemonFromExternalApisJob::dispatch($pokemon->id)
-            ->delay(now()->addSeconds(10));
+    public function syncTcgdex(
+        Pokemon $pokemon,
+        SyncFromTcgdex $action
+    ) {
+        $action->execute($pokemon->id);
 
         return response()->json([
-            'message' => 'Sync queued',
+            'message' => 'TCGdex sync completed',
+            'pokemon_id' => $pokemon->id
+        ]);
+    }
+
+    public function syncAll(
+        Pokemon $pokemon,
+        SyncFromPokeApi $pokeApi,
+        SyncFromTcgdex $tcg
+    ) {
+        $pokeApi->execute($pokemon->id);
+        $tcg->execute($pokemon->id);
+
+        return response()->json([
+            'message' => 'Full sync completed',
             'pokemon_id' => $pokemon->id
         ]);
     }
