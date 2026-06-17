@@ -109,7 +109,7 @@
                                 {/if}
                             </div>
 
-                            <Button onclick={playAudio}>
+                            <Button onclick={playAudio} class="flex gap-2 mt-4 flex-wrap">
                                 Play Audio
                             </Button>
 
