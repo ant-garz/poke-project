@@ -101,10 +101,19 @@
 
                 <div class="mt-2 flex flex-wrap gap-2">
                     {#if pokemon.primary_type}
-                        <Badge>{pokemon.primary_type.name}</Badge>
+                        <Badge
+                            style={`background-color:${pokemon.primary_type.color};color:${pokemon.primary_type.text_color}`}
+                        >
+                            {pokemon.primary_type.name}
+                        </Badge>
                     {/if}
+
                     {#if pokemon.secondary_type}
-                        <Badge>{pokemon.secondary_type.name}</Badge>
+                        <Badge
+                            style={`background-color:${pokemon.secondary_type.color};color:${pokemon.secondary_type.text_color}`}
+                        >
+                            {pokemon.secondary_type.name}
+                        </Badge>
                     {/if}
                 </div>
 
