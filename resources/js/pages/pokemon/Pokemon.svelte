@@ -8,17 +8,18 @@
     import CardDescription from '@/components/ui/card/CardDescription.svelte';
     import CardContent from '@/components/ui/card/CardContent.svelte';
     import Button from '@/components/ui/button/Button.svelte';
-
     import Badge from '@/components/ui/badge/Badge.svelte';
     import Separator from '@/components/ui/separator/Separator.svelte';
     import Skeleton from '@/components/ui/skeleton/Skeleton.svelte';
-
     import JsonTree from '@/components/JsonTree.svelte';
+
     import { formatHeight, formatWeight } from '@/lib/pokemon-units';
 
     let pokemon = $state<any>(null);
     let loading = $state(true);
-    let showRawJson = $state(false);
+
+    let showCards = $state(true);
+    let showRaw = $state(false);
 
     const height = $derived(pokemon ? formatHeight(pokemon.height) : null);
     const weight = $derived(pokemon ? formatWeight(pokemon.weight) : null);
@@ -44,9 +45,7 @@
     let audioEl;
 
     function playAudio() {
-        audioEl.play().catch(error => {
-            console.error("Playback failed:", error);
-        });
+        audioEl?.play().catch(console.error);
     }
 
     function formatMoney(value: number | null | undefined, unit: string) {
@@ -85,7 +84,6 @@
         <div class="flex flex-col gap-6 md:flex-row">
 
             <div class="flex justify-center md:w-72">
-
                 {#if pokemon?.pokeapi_artwork_url}
                     <img
                         src={pokemon.pokeapi_artwork_url}
@@ -94,38 +92,25 @@
                         loading="lazy"
                     />
                 {/if}
-
             </div>
 
             <div class="flex-1">
-
                 <h1 class="text-4xl font-bold">
                     #{pokemon.pokedex_number} {pokemon.name}
                 </h1>
 
-                <p class="mt-2 text-muted-foreground">
-                    Base Experience: {pokemon.base_experience}
-                </p>
-
-                <div class="mt-4 flex flex-wrap gap-2">
+                <div class="mt-2 flex flex-wrap gap-2">
                     {#if pokemon.primary_type}
-                        <Badge
-                            style={`background-color:${pokemon.primary_type.color};color:${pokemon.primary_type.text_color}`}
-                        >
-                            {pokemon.primary_type.name}
-                        </Badge>
+                        <Badge>{pokemon.primary_type.name}</Badge>
                     {/if}
-
                     {#if pokemon.secondary_type}
-                        <Badge
-                            style={`background-color:${pokemon.secondary_type.color};color:${pokemon.secondary_type.text_color}`}
-                        >
-                            {pokemon.secondary_type.name}
-                        </Badge>
+                        <Badge>{pokemon.secondary_type.name}</Badge>
                     {/if}
                 </div>
 
-                <Button onclick={playAudio} class="flex gap-2 mt-4 flex-wrap">
+                <Separator class="my-4" />
+
+                <Button onclick={playAudio} class="mt-2">
                     Play Audio
                 </Button>
 
@@ -134,34 +119,31 @@
                 <Separator class="my-4" />
 
                 <div class="grid gap-4 sm:grid-cols-3">
-
                     <div>
                         <div class="text-sm text-muted-foreground">Height</div>
-                        <div class="text-lg font-semibold">
+                        <div>
                             {#if height}
-                                Height: {height.meters} ({height.feet})
+                                {height.meters} ({height.feet})
                             {/if}
                         </div>
                     </div>
 
                     <div>
                         <div class="text-sm text-muted-foreground">Weight</div>
-                        <div class="text-lg font-semibold">
+                        <div>
                             {#if weight}
-                                Weight: {weight.kg} ({weight.lbs})
+                                {weight.kg} ({weight.lbs})
                             {/if}
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-sm text-muted-foreground">Default Form</div>
-                        <div class="text-lg font-semibold">
-                            {pokemon.is_default ? 'Yes' : 'No'}
-                        </div>
+                        <div class="text-sm text-muted-foreground">Default</div>
+                        <div>{pokemon.is_default ? 'Yes' : 'No'}</div>
                     </div>
-
                 </div>
             </div>
+
         </div>
     </CardContent>
 </Card>
@@ -170,28 +152,26 @@
 <Card>
     <CardHeader>
         <CardTitle>Base Stats</CardTitle>
-        <CardDescription>Core Pokémon battle statistics</CardDescription>
     </CardHeader>
 
     <CardContent>
         <div class="space-y-4">
-
             {#each [
                 ['HP', pokemon.hp],
                 ['Attack', pokemon.attack],
                 ['Defense', pokemon.defense],
-                ['Special Attack', pokemon.special_attack],
-                ['Special Defense', pokemon.special_defense],
+                ['Sp. Atk', pokemon.special_attack],
+                ['Sp. Def', pokemon.special_defense],
                 ['Speed', pokemon.speed]
             ] as [label, value]}
 
                 <div>
-                    <div class="mb-1 flex justify-between">
+                    <div class="flex justify-between">
                         <span>{label}</span>
                         <span>{value}</span>
                     </div>
 
-                    <div class="h-3 overflow-hidden rounded bg-muted">
+                    <div class="h-3 bg-muted rounded">
                         <div
                             class={`h-full ${statColor(value)}`}
                             style={`width:${Math.min(value, 255) / 255 * 100}%`}
@@ -200,7 +180,6 @@
                 </div>
 
             {/each}
-
         </div>
     </CardContent>
 </Card>
@@ -208,185 +187,103 @@
 <!-- DETAILS -->
 <Card>
     <CardHeader>
-        <CardTitle>Pokémon Details</CardTitle>
+        <CardTitle>Details</CardTitle>
     </CardHeader>
 
     <CardContent>
         <div class="grid gap-4 md:grid-cols-2">
-
-            <div>
-                <div class="text-sm text-muted-foreground">Slug</div>
-                <div>{pokemon.slug}</div>
-            </div>
-
-            <div>
-                <div class="text-sm text-muted-foreground">Pokédex Number</div>
-                <div>{pokemon.pokedex_number}</div>
-            </div>
-
-            <div>
-                <div class="text-sm text-muted-foreground">Imported</div>
-                <div>{new Date(pokemon.source_csv_imported_at).toLocaleString()}</div>
-            </div>
-
-            <div>
-                <div class="text-sm text-muted-foreground">TCGdex Synced</div>
-                <div>{new Date(pokemon.source_tcgdex_synced_at).toLocaleString()}</div>
-            </div>
-
-            <div>
-                <div class="text-sm text-muted-foreground">PokéAPI Synced</div>
-                <div>{new Date(pokemon.source_pokeapi_synced_at).toLocaleString()}</div>
-            </div>
-
+            <div>Slug: {pokemon.slug}</div>
+            <div>Pokédex #: {pokemon.pokedex_number}</div>
+            <div>Base XP: {pokemon.base_experience}</div>
+            <div>Imported: {new Date(pokemon.source_csv_imported_at).toLocaleString()}</div>
+            <div>TCGdex Sync: {new Date(pokemon.source_tcgdex_synced_at).toLocaleString()}</div>
+            <div>PokéAPI Sync: {new Date(pokemon.source_pokeapi_synced_at).toLocaleString()}</div>
         </div>
     </CardContent>
 </Card>
 
-<!-- CARDS -->
+<!-- CARDS (COLLAPSIBLE) -->
 <Card>
     <CardHeader>
-        <CardTitle>Trading Cards ({pokemon.cards.length})</CardTitle>
+        <button
+            class="text-left w-full"
+            onclick={() => showCards = !showCards}
+        >
+            <CardTitle>
+                Cards ({pokemon.cards.length})
+                <span class="text-sm text-muted-foreground ml-2">
+                    {showCards ? '▲' : '▼'}
+                </span>
+            </CardTitle>
+        </button>
     </CardHeader>
 
-    <CardContent>
-        <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    {#if showCards}
+        <CardContent>
+            <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
 
-        {#each pokemon.cards as card}
+                {#each pokemon.cards as card}
+                    <Card>
+                        <CardContent class="p-4">
 
-            <Card>
-                <CardContent class="p-4">
-
-                    <!-- CARD IMAGE SAFE -->
-                    {#if card.image_url}
-                        <img
-                            src={`${card.image_url}/high.webp`}
-                            alt={card.name}
-                            class="mb-4 rounded-lg"
-                            loading="lazy"
-                        />
-                    {:else}
-                        <div class="mb-4 h-48 rounded-lg bg-muted flex items-center justify-center text-sm text-muted-foreground">
-                            No card image
-                        </div>
-                    {/if}
-
-                    <h3 class="font-semibold">Card Number: {card.external_id}</h3>
-                    <h3 class="font-semibold">Card Name: {card.name}</h3>
-
-                    <div class="mt-2 space-y-1 text-sm text-muted-foreground">
-                        <div>HP: {card.hp}</div>
-                        <div>Rarity: {card.rarity}</div>
-                        <div>Number: {card.number}</div>
-                    </div>
-
-                    <!-- ATTACKS -->
-                    {#if card.raw_data?.attacks?.length}
-                        <Separator class="my-4" />
-
-                        <div class="space-y-2">
-                            <h4 class="font-medium">Attacks</h4>
-
-                            {#each card.raw_data.attacks as attack}
-                                <div class="rounded border p-2">
-                                    <div class="font-medium">{attack.name}</div>
-                                    <div class="text-sm text-muted-foreground">
-                                        Damage: {attack.damage}
-                                    </div>
-                                    {#if attack.effect}
-                                        <div class="mt-1 text-xs">
-                                            {attack.effect}
-                                        </div>
-                                    {/if}
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
-
-                    <!-- SET -->
-                    {#if card.set}
-                        <Separator class="my-4" />
-
-                        <div class="space-y-3">
-                            <h4 class="font-medium">Set</h4>
-
-                            <div class="flex items-center gap-3">
-
-                                {#if card.set.logo_url}
-                                    <img
-                                        src={card.set.logo_url + '.webp'}
-                                        alt={card.set.name}
-                                        loading="lazy"
-                                        class="h-10 w-auto"
-                                    />
-                                {/if}
-
-                                <div>
-                                    <div class="font-semibold">{card.set.name}</div>
-
-                                    {#if card.set.external_id}
-                                        <div class="text-xs text-muted-foreground">
-                                            Set ID: {card.set.external_id}
-                                        </div>
-                                    {/if}
-                                </div>
-
-                            </div>
-
-                            {#if card.set.symbol_url}
-                                <div class="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span>Symbol:</span>
-
-                                    <img
-                                        src={`${card.set.symbol_url}.webp`}
-                                        alt={`${card.set.name} symbol`}
-                                        loading="lazy"
-                                        class="h-5 w-5"
-                                        onerror={(e) => {
-                                            e.currentTarget.src = `${card.set.symbol_url}.png`;
-                                        }}
-                                    />
+                            {#if card.image_url}
+                                <img
+                                    src={`${card.image_url}/high.webp`}
+                                    alt={card.name}
+                                    class="mb-4 rounded-lg"
+                                    loading="lazy"
+                                />
+                            {:else}
+                                <div class="h-48 mb-4 bg-muted rounded-lg flex items-center justify-center">
+                                    No image
                                 </div>
                             {/if}
-                        </div>
-                    {/if}
 
-                    <!-- PRICING (unchanged) -->
-                    {#if card.raw_data?.pricing}
-                        <Separator class="my-4" />
-                        <!-- existing pricing block unchanged -->
-                    {/if}
+                            <h3 class="font-semibold">{card.name}</h3>
 
-                </CardContent>
-            </Card>
+                            <!-- SET -->
+                            {#if card.set}
+                                <Separator class="my-3" />
 
-        {/each}
+                                <div class="text-sm">
+                                    <div class="font-medium">{card.set.name}</div>
+                                    {#if card.set.logo_url}
+                                        <img
+                                            src={card.set.logo_url + '.webp'}
+                                            class="h-8 mt-2"
+                                            loading="lazy"
+                                        />
+                                    {/if}
+                                </div>
+                            {/if}
 
-        </div>
-    </CardContent>
+                        </CardContent>
+                    </Card>
+                {/each}
+
+            </div>
+        </CardContent>
+    {/if}
 </Card>
 
-<!-- RAW -->
+<!-- RAW DATA (NEW SECTION) -->
 <Card>
     <CardHeader>
-        <CardTitle>Developer Data</CardTitle>
-        <CardDescription>Useful while building features</CardDescription>
+        <CardTitle>Raw Data</CardTitle>
+        <CardDescription>Developer / debugging view</CardDescription>
     </CardHeader>
 
     <CardContent>
-        <button
-            class="font-medium underline"
-            onclick={() => showRawJson = !showRawJson}
-        >
-            {showRawJson ? 'Hide Raw JSON' : 'View Raw JSON'}
-        </button>
+        <Button onclick={() => showRaw = !showRaw}>
+            {showRaw ? 'Hide' : 'Show'} Raw JSON
+        </Button>
 
-        {#if showRawJson}
-            <div class="space-y-6">
+        {#if showRaw}
+            <div class="mt-4 space-y-6">
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>PokeAPI Data</CardTitle>
+                        <CardTitle>PokéAPI</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <JsonTree label="pokeapi" value={pokemon.raw_pokeapi} />
@@ -395,7 +292,7 @@
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>TCGdex Data</CardTitle>
+                        <CardTitle>TCGdex</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <JsonTree label="tcgdex" value={pokemon.raw_tcgdex} />
