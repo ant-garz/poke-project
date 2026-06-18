@@ -95,6 +95,7 @@
                                 src={pokemon.pokeapi_artwork_url}
                                 alt={pokemon.name}
                                 class="max-h-72 rounded-lg"
+                                loading="lazy"
                             />
                         </div>
 
@@ -292,12 +293,14 @@
                                             src={`${card.image_url}/high.webp`}
                                             alt={card.name}
                                             class="mb-4 rounded-lg"
+                                            loading="lazy"
                                         />
                                     {:else}
                                         <p>card image not found for {card.external_id}</p>
                                         <img
                                             src={`${pokemon.sprite_url}`}
                                             alt={card.name}
+                                            loading="lazy"
                                             class="mb-4 rounded-lg"
                                         />
                                     {/if}
@@ -349,6 +352,56 @@
                                                     {/if}
                                                 </div>
                                             {/each}
+                                        </div>
+                                    {/if}
+
+                                    {#if card.set}
+                                        <Separator class="my-4" />
+
+                                        <div class="space-y-3">
+                                            <h4 class="font-medium">Set</h4>
+
+                                            <div class="flex items-center gap-3">
+                                                <!-- Set Logo -->
+                                                {#if card.set.logo_url}
+                                                    <img
+                                                        src={card.set.logo_url + '.webp'}
+                                                        alt={card.set.name}
+                                                        loading="lazy"
+                                                        class="h-10 w-auto"
+                                                    />
+                                                {/if}
+
+                                                <div>
+                                                    <div class="font-semibold">
+                                                        {card.set.name}
+                                                    </div>
+
+                                                    {#if card.set.external_id}
+                                                        <div class="text-xs text-muted-foreground">
+                                                            Set ID: {card.set.external_id}
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            </div>
+
+                                            <!-- Set Symbol (constructed URL) -->
+                                            {#if card.set.external_id}
+                                                <div class="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <span>Symbol:</span>
+
+                                                    <img
+                                                        src={`${card.set.symbol_url}.webp`}
+                                                        alt={`${card.set.name} symbol`}
+                                                        loading="lazy"
+                                                        class="h-5 w-5"
+                                                        onerror={(e) => {
+                                                            // fallback chain if webp fails
+                                                            e.currentTarget.src = `${card.set.symbol_url}.png`;
+                                                        }}
+                                                    />
+                                                </div>
+                                            {/if}
                                         </div>
                                     {/if}
 

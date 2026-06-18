@@ -64,6 +64,6 @@ class PokemonController extends Controller
 
     public function show(Pokemon $pokemon)
     {
-        return $pokemon->load(['primaryType', 'secondaryType', 'cards'])->makeVisible(['raw_tcgdex','raw_pokeapi']);
+        return $pokemon->load(['primaryType', 'secondaryType', 'cards', 'cards.set'])->makeVisible(['raw_tcgdex','raw_pokeapi']);
     }
 }
