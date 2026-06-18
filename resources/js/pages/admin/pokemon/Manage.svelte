@@ -151,9 +151,10 @@
                                         src={p.sprite_url}
                                         class="w-10 h-10 object-contain"
                                         loading="lazy"
+                                        alt="p.name"
                                     />
                                 {:else}
-                                    <div class="w-10 h-10 bg-muted rounded" />
+                                    <div class="w-10 h-10 bg-muted rounded"></div>
                                 {/if}
                             </td>
 
