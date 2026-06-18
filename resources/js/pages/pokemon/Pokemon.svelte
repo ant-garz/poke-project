@@ -278,27 +278,10 @@
             {showRaw ? 'Hide' : 'Show'} Raw JSON
         </Button>
 
-        {#if showRaw}
+         {#if showRaw}
             <div class="mt-4 space-y-6">
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>PokéAPI</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <JsonTree label="pokeapi" value={pokemon.raw_pokeapi} />
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>TCGdex</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <JsonTree label="tcgdex" value={pokemon.raw_tcgdex} />
-                    </CardContent>
-                </Card>
-
+                <JsonTree label="pokeapi" value={pokemon.raw_pokeapi} />
+                <JsonTree label="tcgdex" value={pokemon.raw_tcgdex} />
             </div>
         {/if}
     </CardContent>
