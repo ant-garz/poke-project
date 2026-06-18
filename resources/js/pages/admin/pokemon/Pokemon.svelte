@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { page } from '@inertiajs/svelte';
 
     import Card from '@/components/ui/card/Card.svelte';
@@ -25,35 +25,79 @@
     let pokemon = $state<any>(null);
 
     let audioEl;
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
 
+    // -----------------------------
+    // UI HELPERS
+    // -----------------------------
     function playAudio() {
-        audioEl.play().catch(error => {
-            console.error("Playback failed:", error);
-        });
+        audioEl.play().catch(console.error);
     }
 
+    function getStatusStyle(status: string) {
+        switch (status) {
+            case 'idle':
+                return 'bg-gray-200 text-gray-800';
+            case 'queued':
+                return 'bg-blue-100 text-blue-800';
+            case 'processing':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'completed':
+                return 'bg-green-100 text-green-800';
+            case 'failed':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    function isActiveStatus(status: string) {
+        return status === 'queued' || status === 'processing';
+    }
+
+    // -----------------------------
+    // POLLING CONTROL
+    // -----------------------------
+    function startPolling() {
+        if (pollInterval) return;
+
+        pollInterval = setInterval(fetchPokemon, 3000);
+    }
+
+    function stopPolling() {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+        }
+    }
+
+    // -----------------------------
+    // DATA FETCH
+    // -----------------------------
     async function fetchPokemon() {
-        loading = true;
+        const res = await fetch(`/api/v1/public/pokemon/${pokemonId}`);
+        const data = await res.json();
 
-        const res = await fetch(`/api/v1/public/pokemon/${pokemonId}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        pokemon = await res.json();
+        pokemon = data;
         loading = false;
+
+        // polling decision is ALWAYS based on fresh API response
+        if (isActiveStatus(data.tcgdex_sync_status)) {
+            startPolling();
+        } else {
+            stopPolling();
+        }
     }
 
+    // -----------------------------
+    // UPDATE
+    // -----------------------------
     async function updatePokemon() {
         saving = true;
 
         await fetch(`/api/v1/admin/pokemon/${pokemonId}`, {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(pokemon)
         });
 
@@ -61,22 +105,27 @@
         await fetchPokemon();
     }
 
+    // -----------------------------
+    // SYNC (IMPORTANT FIX)
+    // -----------------------------
     async function sync(source: 'pokeapi' | 'tcgdex') {
         saving = true;
 
         await fetch(`/api/v1/admin/pokemon/${pokemonId}/sync/${source}`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
 
         saving = false;
 
-        // IMPORTANT: refresh to show queued/processing status
+        // 🔥 CRITICAL: force polling immediately after triggering sync
         await fetchPokemon();
+        startPolling();
     }
 
+    // -----------------------------
+    // DELETE / RESTORE
+    // -----------------------------
     async function destroyPokemon() {
         await fetch(`/api/v1/admin/pokemon/${pokemonId}`, {
             method: 'DELETE'
@@ -94,6 +143,10 @@
     }
 
     onMount(fetchPokemon);
+
+    onDestroy(() => {
+        stopPolling();
+    });
 </script>
 
 <svelte:head>
@@ -144,10 +197,10 @@
                             {/if}
                         </div>
 
-                        <!-- SYNC STATUS -->
-                        <div class="text-sm text-gray-500 mt-2">
-                            TCGdex sync status:
-                            <span class="font-semibold text-black">
+                        <!-- STATUS VISUAL) -->
+                        <div class="mt-2 text-sm">
+                            <span class="text-gray-500">TCGdex status:</span>
+                            <span class={`ml-2 px-2 py-1 rounded text-xs font-semibold ${getStatusStyle(pokemon.tcgdex_sync_status)}`}>
                                 {pokemon.tcgdex_sync_status}
                             </span>
                         </div>
@@ -188,19 +241,15 @@
             </CardContent>
         </Card>
 
-        <!-- EDIT FORM -->
-  <Card>
+        <!-- FORM -->
+        <Card>
             <CardHeader>
                 <CardTitle>Core Pokémon Data</CardTitle>
-                <CardDescription>
-                    Editable canonical database fields
-                </CardDescription>
-                <div class="flex gap-2 flex-wrap">
-                    <Button onclick={updatePokemon} disabled={saving} class="mt-2">
-                        Save Changes
-                    </Button>
-                </div>
+                <CardDescription>Editable canonical database fields</CardDescription>
 
+                <Button onclick={updatePokemon} disabled={saving} class="mt-2">
+                    Save Changes
+                </Button>
             </CardHeader>
 
             <CardContent class="space-y-4">
@@ -209,91 +258,91 @@
 
                     <div>
                         <label>Name</label>
-                        <Input bind:value={pokemon.name} placeholder="Name" />
+                        <Input bind:value={pokemon.name} />
                     </div>
 
                     <div>
                         <label>Slug</label>
-                        <Input bind:value={pokemon.slug} placeholder="Slug" />
+                        <Input bind:value={pokemon.slug} />
                     </div>
 
                     <div>
                         <label>HP</label>
-                        <Input type="number" bind:value={pokemon.hp} placeholder="HP" />
+                        <Input type="number" bind:value={pokemon.hp} />
                     </div>
 
                     <div>
                         <label>Attack</label>
-                        <Input type="number" bind:value={pokemon.attack} placeholder="Attack" />
+                        <Input type="number" bind:value={pokemon.attack} />
                     </div>
 
                     <div>
                         <label>Defense</label>
-                        <Input type="number" bind:value={pokemon.defense} placeholder="Defense" />
+                        <Input type="number" bind:value={pokemon.defense} />
                     </div>
 
                     <div>
                         <label>Special Attack</label>
-                        <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" />
+                        <Input type="number" bind:value={pokemon.special_attack} />
                     </div>
 
                     <div>
                         <label>Special Defense</label>
-                        <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" />
+                        <Input type="number" bind:value={pokemon.special_defense} />
                     </div>
 
                     <div>
                         <label>Speed</label>
-                        <Input type="number" bind:value={pokemon.speed} placeholder="Speed" />
+                        <Input type="number" bind:value={pokemon.speed} />
                     </div>
 
                     <div>
                         <label>Height</label>
-                        <Input type="number" bind:value={pokemon.height} placeholder="Height" />
+                        <Input type="number" bind:value={pokemon.height} />
                     </div>
 
                     <div>
                         <label>Weight</label>
-                        <Input type="number" bind:value={pokemon.weight} placeholder="Weight" />
+                        <Input type="number" bind:value={pokemon.weight} />
                     </div>
 
                     <div>
                         <label>Base Experience</label>
-                        <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" />
+                        <Input type="number" bind:value={pokemon.base_experience} />
                     </div>
 
                     <div>
                         <label>Sprite URL</label>
-                        <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" />
+                        <Input bind:value={pokemon.sprite_url} />
                     </div>
 
                     <div>
-                        <label>PokéAPI Artwork URL</label>
-                        <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokéAPI Artwork URL" />
+                        <label>PokéAPI Artwork</label>
+                        <Input bind:value={pokemon.pokeapi_artwork_url} />
                     </div>
 
                     <div>
-                        <label>TCGdex Artwork URL</label>
-                        <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="TCGdex Artwork URL" />
+                        <label>TCGdex Artwork</label>
+                        <Input bind:value={pokemon.tcgdex_artwork_base_url} />
                     </div>
 
                     <div>
                         <label>Cry URL</label>
-                        <Input bind:value={pokemon.cry_url} placeholder="Cry URL" />
+                        <Input bind:value={pokemon.cry_url} />
                     </div>
 
                 </div>
 
                 <textarea
                     bind:value={pokemon.description}
-                    placeholder="Description"
                     class="w-full mt-4"
-                ></textarea>
+                    placeholder="Description"
+                />
 
             </CardContent>
         </Card>
 
-        <!-- RAW DATA -->
+        <!-- RAW -->
         <Card>
             <CardHeader>
                 <CardTitle>Raw Data</CardTitle>

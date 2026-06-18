@@ -50,6 +50,18 @@
 			console.error("Playback failed:", error);
 		});
 	}
+
+    function formatMoney(value: number | null | undefined, unit: string) {
+        if (value === null || value === undefined) return '—';
+
+        const symbol = unit === 'USD'
+            ? '$'
+            : unit === 'EUR'
+                ? '€'
+                : unit || '';
+
+        return `${symbol}${value}`;
+    }
 </script>
 
 <svelte:head>
@@ -265,14 +277,26 @@
                         {#each pokemon.cards as card}
                             <Card>
                                 <CardContent class="p-4">
-                                    <img
-                                        src={`${card.image_url}/high.webp`}
-                                        alt={card.name}
-                                        class="mb-4 rounded-lg"
-                                    />
+                                    {#if card.image_url !== null}
+                                        <img
+                                            src={`${card.image_url}/high.webp`}
+                                            alt={card.name}
+                                            class="mb-4 rounded-lg"
+                                        />
+                                    {:else}
+                                        <p>card image not found for {card.external_id}</p>
+                                        <img
+                                            src={`${pokemon.sprite_url}`}
+                                            alt={card.name}
+                                            class="mb-4 rounded-lg"
+                                        />
+                                    {/if}
 
                                     <h3 class="font-semibold">
-                                        {card.name}
+                                        Card Number: {card.external_id}
+                                    </h3>
+                                    <h3 class="font-semibold">
+                                        Card Name: {card.name}
                                     </h3>
 
                                     <div class="mt-2 space-y-1 text-sm text-muted-foreground">
@@ -317,6 +341,68 @@
                                             {/each}
                                         </div>
                                     {/if}
+
+                                    {#if card.raw_data?.pricing}
+                                        <Separator class="my-4" />
+
+                                        <div class="space-y-2">
+                                            <h4 class="font-medium">
+                                                Pricing
+                                            </h4>
+
+                                            <!-- TCGPlayer -->
+                                            {#if card.raw_data.pricing.tcgplayer}
+                                                <div class="rounded border p-2 text-sm">
+                                                    <div class="font-semibold mb-1">
+                                                        TCGPlayer ({card.raw_data.pricing.tcgplayer.unit})
+                                                    </div>
+
+                                                    {#if card.raw_data.pricing.tcgplayer.normal}
+                                                        <div class="text-muted-foreground">
+                                                            Normal:
+                                                            low {formatMoney(card.raw_data.pricing.tcgplayer.normal.lowPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                            mid {formatMoney(card.raw_data.pricing.tcgplayer.normal.midPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                            high {formatMoney(card.raw_data.pricing.tcgplayer.normal.highPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                            market {formatMoney(card.raw_data.pricing.tcgplayer.normal.marketPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                        </div>
+                                                    {/if}
+
+                                                    {#if card.raw_data.pricing.tcgplayer["reverse-holofoil"]}
+                                                        <div class="text-muted-foreground mt-1">
+                                                            Reverse holo:
+                                                            low {formatMoney(card.raw_data.pricing.tcgplayer["reverse-holofoil"].lowPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                            mid {formatMoney(card.raw_data.pricing.tcgplayer["reverse-holofoil"].midPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                            market {formatMoney(card.raw_data.pricing.tcgplayer["reverse-holofoil"].marketPrice, card.raw_data.pricing.tcgplayer.unit)}
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            {/if}
+
+                                            <!-- CardMarket -->
+                                            {#if card.raw_data.pricing.cardmarket}
+                                                <div class="rounded border p-2 text-sm">
+                                                    <div class="font-semibold mb-1">
+                                                        CardMarket ({card.raw_data.pricing.cardmarket.unit})
+                                                    </div>
+
+                                                    <div class="text-muted-foreground">
+                                                        avg {formatMoney(card.raw_data.pricing.cardmarket.avg, card.raw_data.pricing.cardmarket.unit)}
+                                                        low {formatMoney(card.raw_data.pricing.cardmarket.low, card.raw_data.pricing.cardmarket.unit)}
+                                                        trend {formatMoney(card.raw_data.pricing.cardmarket.trend, card.raw_data.pricing.cardmarket.unit)}
+                                                    </div>
+
+                                                    {#if card.raw_data.pricing.cardmarket["avg-holo"]}
+                                                        <div class="text-muted-foreground mt-1">
+                                                            · holo avg {formatMoney(card.raw_data.pricing.cardmarket["avg-holo"],card.raw_data.pricing.cardmarket.unit)}
+                                                            · holo low {formatMoney(card.raw_data.pricing.cardmarket["low-holo"],card.raw_data.pricing.cardmarket.unit)}
+                                                            · holo trend {formatMoney(card.raw_data.pricing.cardmarket["trend-holo"],card.raw_data.pricing.cardmarket.unit)}
+                                                        </div>
+                                                    {/if}
+                                                </div>
+                                            {/if}
+                                        </div>
+                                    {/if}
+
                                 </CardContent>
                             </Card>
                         {/each}
