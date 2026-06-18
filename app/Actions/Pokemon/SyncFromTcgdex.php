@@ -18,105 +18,125 @@ class SyncFromTcgdex
     {
         $pokemon = Pokemon::findOrFail($pokemonId);
 
-        $cardBrief = $this->tcg->findCardByName($pokemon->name);
+        $cardBriefs = $this->tcg->findCardsByName($pokemon->name);
 
-        if (! $cardBrief) {
+        if (empty($cardBriefs)) {
             return $pokemon;
         }
 
-        $card = $this->tcg->getCard($cardBrief->id);
+        $pokemonUpdated = false;
 
-        if (! $card) {
-            return $pokemon;
-        }
+        foreach ($cardBriefs as $cardBrief) {
 
-        $data = $this->normalize($card);
+            if (! isset($cardBrief->id)) {
+                continue;
+            }
 
-        /*
-        |-------------------------
-        | Update Pokémon
-        |-------------------------
-        */
-        $pokemon->update([
-            'description' => $data['description'] ?? null,
-            'tcgdex_artwork_base_url' => $data['image'] ?? null,
-            'raw_tcgdex' => $data,
-            'source_tcgdex_synced_at' => now(),
-        ]);
+            $card = $this->tcg->getCard($cardBrief->id);
 
-        /*
-        |-------------------------
-        | Card Set
-        |-------------------------
-        */
-        $set = null;
+            if (! $card) {
+                continue;
+            }
 
-        if (!empty($data['set']['id'] ?? null)) {
-            $set = CardSet::updateOrCreate(
-                ['external_id' => (string) $data['set']['id']],
+            $data = $this->normalize($card);
+
+            /*
+            |-------------------------
+            | Update Pokémon once
+            |-------------------------
+            */
+            if (! $pokemonUpdated) {
+                $pokemon->update([
+                    'description' => $data['description'] ?? null,
+                    'tcgdex_artwork_base_url' => $data['image'] ?? null,
+                    'raw_tcgdex' => $data,
+                    'source_tcgdex_synced_at' => now(),
+                ]);
+
+                $pokemonUpdated = true;
+            }
+
+            /*
+            |-------------------------
+            | Card Set
+            |-------------------------
+            */
+            $set = null;
+
+            if (! empty($data['set']['id'] ?? null)) {
+                $set = CardSet::updateOrCreate(
+                    [
+                        'external_id' => (string) $data['set']['id'],
+                    ],
+                    [
+                        'name' => $data['set']['name'] ?? null,
+                        'series' => $data['set']['serie'] ?? null,
+
+                        'logo_url' => $data['set']['logo'] ?? null,
+                        'symbol_url' => $data['set']['symbol'] ?? null,
+
+                        'card_count_official' => $data['set']['cardCount']['official'] ?? null,
+                        'card_count_total' => $data['set']['cardCount']['total'] ?? null,
+
+                        'raw_data' => $data['set'],
+                    ]
+                );
+            }
+
+            /*
+            |-------------------------
+            | Card
+            |-------------------------
+            */
+            $localCard = Card::updateOrCreate(
                 [
-                    'name' => $data['set']['name'] ?? null,
-                    'series' => $data['set']['serie'] ?? null,
+                    'source_tcgdex_id' => (string) $data['id'],
+                ],
+                [
+                    'card_set_id' => $set?->id,
 
-                    'logo_url' => $data['set']['logo'] ?? null,
-                    'symbol_url' => $data['set']['symbol'] ?? null,
+                    'cardable_id' => $pokemon->id,
+                    'cardable_type' => Pokemon::class,
 
-                    'card_count_official' => $data['set']['cardCount']['official'] ?? null,
-                    'card_count_total' => $data['set']['cardCount']['total'] ?? null,
+                    'external_id' => (string) $data['id'],
+                    'name' => $data['name'] ?? null,
+                    'number' => $data['localId'] ?? null,
 
-                    'raw_data' => $data['set'],
+                    'hp' => is_numeric($data['hp'] ?? null)
+                        ? (int) $data['hp']
+                        : null,
+
+                    'rarity' => $data['rarity'] ?? null,
+                    'image_url' => $data['image'] ?? null,
+
+                    'supertype' => 'Pokémon',
+
+                    'raw_data' => $data,
                 ]
             );
-        }
 
-        /*
-        |-------------------------
-        | Card
-        |-------------------------
-        */
-        $localCard = Card::updateOrCreate(
-            [
-                'source_tcgdex_id' => (string) $data['id'],
-            ],
-            [
-                'card_set_id' => $set?->id,
+            /*
+            |-------------------------
+            | Attacks (rebuild)
+            |-------------------------
+            */
+            CardAttack::where('card_id', $localCard->id)->delete();
 
-                'cardable_id' => $pokemon->id,
-                'cardable_type' => Pokemon::class,
+            foreach ($data['attacks'] ?? [] as $attack) {
+                CardAttack::create([
+                    'card_id' => $localCard->id,
 
-                'external_id' => (string) $data['id'],
-                'name' => $data['name'] ?? null,
-                'number' => $data['localId'] ?? null,
+                    'name' => $attack['name'] ?? null,
 
-                'hp' => is_numeric($data['hp'] ?? null)
-                    ? (int) $data['hp']
-                    : null,
+                    'damage' => isset($attack['damage'])
+                        ? (string) $attack['damage']
+                        : null,
 
-                'rarity' => $data['rarity'] ?? null,
-                'image_url' => $data['image'] ?? null,
+                    'effect' => $attack['effect'] ?? null,
 
-                'supertype' => 'Pokémon',
-                'raw_data' => $data,
-            ]
-        );
-
-        /*
-        |-------------------------
-        | Attacks (rebuild)
-        |-------------------------
-        */
-        CardAttack::where('card_id', $localCard->id)->delete();
-
-        foreach ($data['attacks'] ?? [] as $attack) {
-            CardAttack::create([
-                'card_id' => $localCard->id,
-                'name' => $attack['name'] ?? null,
-                'damage' => isset($attack['damage'])
-                    ? (string) $attack['damage']
-                    : null,
-                'effect' => $attack['effect'] ?? null,
-                'cost' => $attack['cost'] ?? [],
-            ]);
+                    'cost' => $attack['cost'] ?? [],
+                ]);
+            }
         }
 
         return $pokemon->fresh();

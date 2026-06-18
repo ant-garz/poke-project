@@ -146,9 +146,9 @@
                             </td>
 
                             <td class="p-2">
-                                {#if p.pokeapi_artwork_url}
+                                {#if p.sprite_url}
                                     <img
-                                        src={p.pokeapi_artwork_url}
+                                        src={p.sprite_url}
                                         class="w-10 h-10 object-contain"
                                         loading="lazy"
                                     />

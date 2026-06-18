@@ -23,22 +23,17 @@ class TcgdexClient
         }
     }
 
-    public function findCardByName(string $name)
-{
-    $this->throttle();
+    public function findCardsByName(string $name): array
+    {
+        $this->throttle();
 
-    $query = Query::create()
-        ->contains('name', $name)
-        ->paginate(1, 1); // IMPORTANT: 1 result only
+        $query = Query::create()
+            ->contains('name', $name);
 
-    $result = $this->sdk->card->list($query);
+        $results = $this->sdk->card->list($query);
 
-    if (empty($result) || !isset($result[0])) {
-        return null;
+        return $results ?: [];
     }
-
-    return $result[0];
-}
 
     public function getCard(string $cardId)
     {
