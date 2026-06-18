@@ -252,17 +252,129 @@
 
                             <!-- SET -->
                             {#if card.set}
-                                <Separator class="my-3" />
+                                <Separator class="my-4" />
 
-                                <div class="text-sm">
-                                    <div class="font-medium">{card.set.name}</div>
-                                    {#if card.set.logo_url}
-                                        <img
-                                            src={card.set.logo_url + '.webp'}
-                                            class="h-8 mt-2"
-                                            loading="lazy"
-                                        />
+                                <div class="space-y-3">
+                                    <h4 class="font-medium">Set</h4>
+
+                                    <div class="flex items-center gap-3">
+                                        {#if card.set.logo_url}
+                                            <img
+                                                src={`${card.set.logo_url}.webp`}
+                                                alt={card.set.name}
+                                                loading="lazy"
+                                                class="h-10 w-auto"
+                                            />
+                                        {/if}
+
+                                        <div>
+                                            <div class="font-semibold">
+                                                {card.set.name}
+                                            </div>
+
+                                            {#if card.set.external_id}
+                                                <div class="text-xs text-muted-foreground">
+                                                    Set ID: {card.set.external_id}
+                                                </div>
+                                            {/if}
+                                        </div>
+                                    </div>
+
+                                    {#if card.set.symbol_url}
+                                        <div class="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                                            <span>Symbol:</span>
+
+                                            <img
+                                                src={`${card.set.symbol_url}.webp`}
+                                                alt={`${card.set.name} symbol`}
+                                                loading="lazy"
+                                                class="h-5 w-5"
+                                                onerror={(e) => {
+                                                    e.currentTarget.src = `${card.set.symbol_url}.png`;
+                                                }}
+                                            />
+                                        </div>
                                     {/if}
+                                </div>
+                            {/if}
+
+                            {#if card.raw_data?.pricing}
+                                <Separator class="my-4" />
+
+                                <div class="space-y-3">
+                                <h4 class="font-medium">Pricing</h4>
+
+                                <!-- TCGPLAYER -->
+                                {#if card.raw_data.pricing.tcgplayer}
+                                <div class="rounded border p-3 text-sm space-y-2">
+                                <div class="font-semibold">
+                                TCGPlayer ({card.raw_data.pricing.tcgplayer.unit})
+                                </div>
+
+                                {#if card.raw_data.pricing.tcgplayer.normal}
+                                <div class="space-y-1 text-muted-foreground">
+                                <div class="font-medium text-foreground">Normal</div>
+                                <div>Low: {formatMoney(card.raw_data.pricing.tcgplayer.normal.lowPrice, 'USD')}</div>
+                                <div>Mid: {formatMoney(card.raw_data.pricing.tcgplayer.normal.midPrice, 'USD')}</div>
+                                <div>High: {formatMoney(card.raw_data.pricing.tcgplayer.normal.highPrice, 'USD')}</div>
+                                <div>Market: {formatMoney(card.raw_data.pricing.tcgplayer.normal.marketPrice, 'USD')}</div>
+                                <div>Direct Low: {formatMoney(card.raw_data.pricing.tcgplayer.normal.directLowPrice, 'USD')}</div>
+                                </div>
+                                {/if}
+
+                                {#if card.raw_data.pricing.tcgplayer['reverse-holofoil']}
+                                <div class="space-y-1 text-muted-foreground mt-2">
+                                <div class="font-medium text-foreground">Reverse Holofoil</div>
+                                <div>Low: {formatMoney(card.raw_data.pricing.tcgplayer['reverse-holofoil'].lowPrice, 'USD')}</div>
+                                <div>Mid: {formatMoney(card.raw_data.pricing.tcgplayer['reverse-holofoil'].midPrice, 'USD')}</div>
+                                <div>High: {formatMoney(card.raw_data.pricing.tcgplayer['reverse-holofoil'].highPrice, 'USD')}</div>
+                                <div>Market: {formatMoney(card.raw_data.pricing.tcgplayer['reverse-holofoil'].marketPrice, 'USD')}</div>
+                                <div>Direct Low: {formatMoney(card.raw_data.pricing.tcgplayer['reverse-holofoil'].directLowPrice, 'USD')}</div>
+                                </div>
+                                {/if}
+
+                                <div class="text-xs text-muted-foreground mt-2">
+                                Updated: {card.raw_data.pricing.tcgplayer.updated}
+                                </div>
+                                </div>
+                                {/if}
+
+                                <!-- CARDMARKET -->
+                                {#if card.raw_data.pricing.cardmarket}
+                                <div class="rounded border p-3 text-sm space-y-2">
+                                <div class="font-semibold">
+                                CardMarket ({card.raw_data.pricing.cardmarket.unit})
+                                </div>
+
+                                <div class="space-y-1 text-muted-foreground">
+                                <div class="font-medium text-foreground">Normal</div>
+
+                                <div>Avg: {formatMoney(card.raw_data.pricing.cardmarket.avg, 'EUR')}</div>
+                                <div>Low: {formatMoney(card.raw_data.pricing.cardmarket.low, 'EUR')}</div>
+                                <div>Trend: {formatMoney(card.raw_data.pricing.cardmarket.trend, 'EUR')}</div>
+
+                                <div>Avg 1: {formatMoney(card.raw_data.pricing.cardmarket.avg1, 'EUR')}</div>
+                                <div>Avg 7: {formatMoney(card.raw_data.pricing.cardmarket.avg7, 'EUR')}</div>
+                                <div>Avg 30: {formatMoney(card.raw_data.pricing.cardmarket.avg30, 'EUR')}</div>
+                                </div>
+
+                                <div class="space-y-1 text-muted-foreground mt-2">
+                                <div class="font-medium text-foreground">Holo</div>
+
+                                <div>Avg: {formatMoney(card.raw_data.pricing.cardmarket['avg-holo'], 'EUR')}</div>
+                                <div>Low: {formatMoney(card.raw_data.pricing.cardmarket['low-holo'], 'EUR')}</div>
+                                <div>Trend: {formatMoney(card.raw_data.pricing.cardmarket['trend-holo'], 'EUR')}</div>
+
+                                <div>Avg 1: {formatMoney(card.raw_data.pricing.cardmarket['avg1-holo'], 'EUR')}</div>
+                                <div>Avg 7: {formatMoney(card.raw_data.pricing.cardmarket['avg7-holo'], 'EUR')}</div>
+                                <div>Avg 30: {formatMoney(card.raw_data.pricing.cardmarket['avg30-holo'], 'EUR')}</div>
+                                </div>
+
+                                <div class="text-xs text-muted-foreground mt-2">
+                                Updated: {card.raw_data.pricing.cardmarket.updated}
+                                </div>
+                                </div>
+                                {/if}
                                 </div>
                             {/if}
 
