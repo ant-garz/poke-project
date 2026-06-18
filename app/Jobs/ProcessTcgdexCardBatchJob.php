@@ -3,7 +3,7 @@
 namespace App\Jobs;
 
 use App\Actions\Pokemon\SyncFromTcgdex;
-use App\Models\Pokemon;
+use App\Services\ExternalApi\TcgdexClient;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -21,22 +21,9 @@ class ProcessTcgdexCardBatchJob implements ShouldQueue
 
     public function handle(SyncFromTcgdex $action): void
     {
-        $pokemon = Pokemon::findOrFail($this->pokemonId);
-
-        $cards = [];
-
-        foreach ($this->cardIds as $id) {
-            $card = app(\App\Services\ExternalApi\TcgdexClient::class)
-                ->getCard($id);
-
-            if (!$card) continue;
-
-            // normalize
-            $cards[] = json_decode(json_encode($card), true);
-        }
-
-        if (!empty($cards)) {
-            $action->syncCards($pokemon, $cards);
-        }
+        $action->syncCards(
+            $this->pokemonId,
+            $this->cardIds
+        );
     }
 }

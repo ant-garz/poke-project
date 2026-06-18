@@ -13,7 +13,7 @@ class FetchTcgdexDataJob implements ShouldQueue
 {
     use Queueable;
 
-    public $timeout = 120;
+    public int $timeout = 600;
 
     public function __construct(
         public int $pokemonId
@@ -23,71 +23,57 @@ class FetchTcgdexDataJob implements ShouldQueue
     {
         $pokemon = Pokemon::findOrFail($this->pokemonId);
 
-        $rawCards = $tcg->findCardsByName($pokemon->name);
+        $pokemon->update([
+            'tcgdex_sync_status' => 'processing',
+            'tcg_sync_started_at' => now(),
+        ]);
 
-        $cardBriefs = collect($rawCards)
-            ->filter(fn ($card) =>
-                isset($card->name)
-                && $this->isValidPokemonCardMatch($pokemon->name, $card->name)
-            )
-            ->values();
+        $cardBriefs = $tcg->findCardsByName($pokemon->name);
 
-        if ($cardBriefs->isEmpty()) {
-            \Log::info('No TCG cards matched', [
-                'pokemon_id' => $pokemon->id,
-                'pokemon' => $pokemon->name,
+        if (empty($cardBriefs)) {
+            $pokemon->update([
+                'tcgdex_sync_status' => 'completed',
+                'source_tcgdex_synced_at' => now(),
             ]);
             return;
         }
 
-        $ids = $cardBriefs
+        $ids = collect($cardBriefs)
             ->pluck('id')
             ->filter()
             ->values()
             ->all();
 
-        \Log::info('Dispatching TCG batches', [
-            'pokemon_id' => $pokemon->id,
-            'pokemon' => $pokemon->name,
-            'total_cards' => count($ids),
-        ]);
-
-        foreach (array_chunk($ids, 25) as $chunk) {
+        foreach (array_chunk($ids, 10) as $chunk) {
             ProcessTcgdexCardBatchJob::dispatch(
                 $pokemon->id,
                 $chunk
             );
         }
-    }
 
-    private function isValidPokemonCardMatch(string $pokemonName, string $cardName): bool
-    {
-        $pokemon = strtolower($pokemonName);
-        $card = strtolower($cardName);
+        \Log::info('TCGdex job dispatched', [
+            'pokemon_id' => $pokemon->id,
+            'total_cards' => count($ids),
+            'chunks' => count(array_chunk($ids, 10)),
+        ]);
 
-        if ($card === $pokemon) return true;
-
-        $cleanCard = preg_replace(
-            '/^(dark|shining|team rocket\'s|rocket\'s|base|shadow|delta)\s+/i',
-            '',
-            $card
-        );
-
-        if ($cleanCard === $pokemon) return true;
-
-        if (str_starts_with($card, $pokemon . ' ')) return true;
-
-        $normalizedPokemon = preg_replace('/[^a-z0-9]/', '', $pokemon);
-        $normalizedCard = preg_replace('/[^a-z0-9]/', '', $card);
-
-        return $normalizedPokemon === $normalizedCard;
+        // IMPORTANT:
+        // still processing until batch jobs finish
+        $pokemon->update([
+            'tcgdex_sync_status' => 'processing',
+        ]);
     }
 
     public function failed(Throwable $e): void
     {
-        \Log::error('FetchTcgdexDataJob failed', [
+        Pokemon::where('id', $this->pokemonId)
+            ->update([
+                'tcgdex_sync_status' => 'failed',
+            ]);
+
+        \Log::error('TCGdex job failed', [
             'pokemon_id' => $this->pokemonId,
-            'message' => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 }

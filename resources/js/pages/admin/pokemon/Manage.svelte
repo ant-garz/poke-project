@@ -122,7 +122,6 @@
                     <th class="p-2">Sprite</th>
                     <th class="p-2">Name</th>
                     <th class="p-2">Types</th>
-                    <th class="p-2 text-right"></th>
                 </tr>
             </thead>
 
@@ -139,7 +138,9 @@
                 {:else}
 
                     {#each pokemon as p}
-                        <tr class="border-b hover:bg-muted/50 transition">
+                        <tr class="border-b hover:bg-muted/50 transition"  onclick={()=> {
+                            window.location.href="/admin/pokemon/" + p.id
+                        }}>
 
                             <td class="p-2">
                                 {p.pokedex_number}
@@ -167,19 +168,6 @@
                                 {#if p.secondary_type}
                                     {' / ' + p.secondary_type.name}
                                 {/if}
-                            </td>
-
-                            <!-- ADMIN ACTIONS -->
-                            <td class="p-2 text-right space-x-2">
-
-                                <Button
-                                    onclick={() => {
-                                        window.location.href = `/admin/pokemon/${p.id}`;
-                                    }}
-                                >
-                                    Open
-                                </Button>
-
                             </td>
 
                         </tr>

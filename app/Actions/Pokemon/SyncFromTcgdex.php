@@ -9,70 +9,64 @@ use App\Models\Pokemon;
 
 class SyncFromTcgdex
 {
+    public function __construct(
+        private \App\Services\ExternalApi\TcgdexClient $tcg
+    ) {}
+
     /**
-     * Admin entrypoint
-     * (keeps same behavior as queue, but fetches internally)
+     * Admin entrypoint (FULL SYNC)
      */
-    public function execute(int $pokemonId, array $cardPayloads = null): Pokemon
+    public function execute(int $pokemonId): Pokemon
     {
         $pokemon = Pokemon::findOrFail($pokemonId);
 
-        if ($cardPayloads === null) {
-            // Admin fallback path (optional)
-            throw new \InvalidArgumentException(
-                'Admin sync should pass pre-fetched payloads in new architecture'
-            );
-        }
-
-        return $this->syncCards($pokemon, $cardPayloads);
+        // admin now uses job instead
+        throw new \RuntimeException(
+            'Manual execute no longer supported. Use queue job.'
+        );
     }
 
     /**
-     * Queue-safe bulk processor
-     *
-     * IMPORTANT:
-     * - NO API CALLS HERE
-     * - ONLY DB WORK
+     * Core sync (queue-safe)
      */
-    public function syncCards(Pokemon $pokemon, array $cards): Pokemon
+    public function syncCards(int $pokemonId, array $cardIds): Pokemon
     {
-        if (empty($cards)) {
-            return $pokemon;
-        }
+        $pokemon = Pokemon::findOrFail($pokemonId);
 
+        $cards = [];
         $sets = [];
-        $firstCard = $cards[0];
 
-        /*
-        |-------------------------
-        | Collect sets
-        |-------------------------
-        */
-        foreach ($cards as $data) {
-            if (!empty($data['set']['id'])) {
+        foreach ($cardIds as $cardId) {
+
+            $card = $this->tcg->getCard($cardId);
+
+            if (! $card) {
+                continue;
+            }
+
+            $data = $this->normalize($card);
+
+            $cards[] = $data;
+
+            if (!empty($data['set']['id'] ?? null)) {
                 $sets[$data['set']['id']] = $data['set'];
             }
         }
 
-        /*
-        |-------------------------
-        | Update Pokémon once
-        |-------------------------
-        */
+        if (empty($cards)) {
+            return $pokemon;
+        }
+
+        $firstCard = $cards[0];
+
         if ($pokemon->source_tcgdex_synced_at === null) {
             $pokemon->update([
                 'description' => $firstCard['description'] ?? null,
                 'tcgdex_artwork_base_url' => $firstCard['image'] ?? null,
                 'raw_tcgdex' => $firstCard,
-                'source_tcgdex_synced_at' => now(),
             ]);
         }
 
-        /*
-        |-------------------------
-        | Upsert sets
-        |-------------------------
-        */
         foreach ($sets as $setId => $setData) {
             CardSet::updateOrCreate(
                 ['external_id' => (string) $setId],
@@ -92,15 +86,9 @@ class SyncFromTcgdex
             ->get()
             ->keyBy('external_id');
 
-        /*
-        |-------------------------
-        | Cards + attacks
-        |-------------------------
-        */
         foreach ($cards as $data) {
 
-            $setExternalId = $data['set']['id'] ?? null;
-            $set = $setExternalId ? $setMap->get((string) $setExternalId) : null;
+            $set = $setMap->get((string) ($data['set']['id'] ?? null));
 
             $localCard = Card::updateOrCreate(
                 ['source_tcgdex_id' => (string) $data['id']],
@@ -112,11 +100,7 @@ class SyncFromTcgdex
                     'external_id' => (string) $data['id'],
                     'name' => $data['name'] ?? null,
                     'number' => $data['localId'] ?? null,
-
-                    'hp' => is_numeric($data['hp'] ?? null)
-                        ? (int) $data['hp']
-                        : null,
-
+                    'hp' => is_numeric($data['hp'] ?? null) ? (int) $data['hp'] : null,
                     'rarity' => $data['rarity'] ?? null,
                     'image_url' => $data['image'] ?? null,
                     'supertype' => 'Pokémon',
@@ -124,7 +108,6 @@ class SyncFromTcgdex
                 ]
             );
 
-            // rebuild attacks ONLY for this card
             CardAttack::where('card_id', $localCard->id)->delete();
 
             $attackRows = [];
@@ -133,9 +116,7 @@ class SyncFromTcgdex
                 $attackRows[] = [
                     'card_id' => $localCard->id,
                     'name' => $attack['name'] ?? null,
-                    'damage' => isset($attack['damage'])
-                        ? (string) $attack['damage']
-                        : null,
+                    'damage' => $attack['damage'] ?? null,
                     'effect' => $attack['effect'] ?? null,
                     'cost' => json_encode($attack['cost'] ?? []),
                 ];
@@ -147,5 +128,43 @@ class SyncFromTcgdex
         }
 
         return $pokemon->fresh();
+    }
+
+    private function normalize(mixed $card): array
+    {
+        return json_decode(json_encode($card), true) ?? [];
+    }
+
+    private function filterValidCards(string $pokemonName, array $cards): array
+    {
+        return array_values(array_filter(
+            $cards,
+            fn ($card) =>
+                isset($card['name']) &&
+                $this->isValidPokemonCardMatch($pokemonName, $card['name'])
+        ));
+    }
+
+    private function isValidPokemonCardMatch(string $pokemonName, string $cardName): bool
+    {
+        $pokemon = strtolower($pokemonName);
+        $card = strtolower($cardName);
+
+        if ($card === $pokemon) return true;
+
+        $cleanCard = preg_replace(
+            '/^(dark|shining|team rocket\'s|rocket\'s|base|shadow|delta)\s+/i',
+            '',
+            $card
+        );
+
+        if ($cleanCard === $pokemon) return true;
+
+        if (str_starts_with($card, $pokemon . ' ')) return true;
+
+        $normalizedPokemon = preg_replace('/[^a-z0-9]/', '', $pokemon);
+        $normalizedCard = preg_replace('/[^a-z0-9]/', '', $card);
+
+        return $normalizedPokemon === $normalizedCard;
     }
 }

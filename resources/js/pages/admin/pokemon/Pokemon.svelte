@@ -35,14 +35,14 @@
     async function fetchPokemon() {
         loading = true;
 
-        const res = await fetch(`/api/v1/public/pokemon/${pokemonId}`,{
+        const res = await fetch(`/api/v1/public/pokemon/${pokemonId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        pokemon = await res.json();
 
+        pokemon = await res.json();
         loading = false;
     }
 
@@ -62,12 +62,18 @@
     }
 
     async function sync(source: 'pokeapi' | 'tcgdex') {
+        saving = true;
+
         await fetch(`/api/v1/admin/pokemon/${pokemonId}/sync/${source}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ source })
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
+        saving = false;
+
+        // IMPORTANT: refresh to show queued/processing status
         await fetchPokemon();
     }
 
@@ -96,6 +102,8 @@
 
 <div class="container mx-auto space-y-6 p-6">
 
+    <h1>Admin</h1>
+
     {#if loading}
         <Skeleton class="h-64 w-full" />
     {:else if pokemon}
@@ -104,6 +112,7 @@
         <Card>
             <CardContent class="p-6">
                 <div class="flex gap-6">
+
                     <img
                         src={pokemon.pokeapi_artwork_url}
                         class="h-40 w-40 object-contain"
@@ -111,30 +120,39 @@
                     />
 
                     <div class="flex-1 space-y-2">
+
                         <h1 class="text-3xl font-bold">
                             #{pokemon.pokedex_number} {pokemon.name}
                         </h1>
 
+                        <!-- TYPES -->
                         <div class="flex gap-2 flex-wrap">
                             {#if pokemon.primary_type}
                                 <Badge
                                     style={`background-color:${pokemon.primary_type.color};color:${pokemon.primary_type.text_color}`}
-                                    class="font-medium"
                                 >
                                     {pokemon.primary_type.name}
                                 </Badge>
                             {/if}
+
                             {#if pokemon.secondary_type}
                                 <Badge
-                                style={`background-color:${pokemon.secondary_type.color};color:${pokemon.secondary_type.text_color}`}
-                                class="font-medium"
+                                    style={`background-color:${pokemon.secondary_type.color};color:${pokemon.secondary_type.text_color}`}
                                 >
-                                {pokemon.secondary_type.name}
+                                    {pokemon.secondary_type.name}
                                 </Badge>
                             {/if}
                         </div>
 
-                        <Button onclick={playAudio} class="flex gap-2 mt-4 flex-wrap">
+                        <!-- SYNC STATUS -->
+                        <div class="text-sm text-gray-500 mt-2">
+                            TCGdex sync status:
+                            <span class="font-semibold text-black">
+                                {pokemon.tcgdex_sync_status}
+                            </span>
+                        </div>
+
+                        <Button onclick={playAudio} class="mt-4">
                             Play Audio
                         </Button>
 
@@ -142,17 +160,14 @@
 
                         <Separator class="my-4" />
 
-                        <div class="flex gap-2 mt-4 flex-wrap">
+                        <!-- ACTIONS -->
+                        <div class="flex gap-2 flex-wrap">
 
-                            <Button onclick={updatePokemon} disabled={saving}>
-                                Save Changes
-                            </Button>
-
-                            <Button onclick={() => sync('pokeapi')}>
+                            <Button disabled={saving} onclick={() => sync('pokeapi')}>
                                 Sync PokéAPI
                             </Button>
 
-                            <Button onclick={() => sync('tcgdex')}>
+                            <Button disabled={saving} onclick={() => sync('tcgdex')}>
                                 Sync TCGdex
                             </Button>
 
@@ -167,70 +182,118 @@
                             </Button>
 
                         </div>
+
                     </div>
                 </div>
             </CardContent>
         </Card>
 
         <!-- EDIT FORM -->
-        <Card>
+  <Card>
             <CardHeader>
                 <CardTitle>Core Pokémon Data</CardTitle>
                 <CardDescription>
                     Editable canonical database fields
                 </CardDescription>
+                <div class="flex gap-2 flex-wrap">
+                    <Button onclick={updatePokemon} disabled={saving} class="mt-2">
+                        Save Changes
+                    </Button>
+                </div>
+
             </CardHeader>
 
             <CardContent class="space-y-4">
 
-                <div class="grid md:grid-cols-1 gap-4">
+                <div class="grid gap-4">
 
-                    <label class="w-50" for="Name">Name:</label>
-                    <Input bind:value={pokemon.name} placeholder="Name" />
-                    <label class="w-50" for="Slug">Slug:</label>
-                    <Input bind:value={pokemon.slug} placeholder="Slug" />
+                    <div>
+                        <label>Name</label>
+                        <Input bind:value={pokemon.name} placeholder="Name" />
+                    </div>
 
-                    <label class="w-50" for="HP">HP:</label>
-                    <Input type="number" bind:value={pokemon.hp} placeholder="HP" />
-                    <label class="w-50" for="Attack">Attack:</label>
-                    <Input type="number" bind:value={pokemon.attack} placeholder="Attack" />
-                    <label class="w-50" for="Defense">Defense:</label>
-                    <Input type="number" bind:value={pokemon.defense} placeholder="Defense" />
-                    <label class="w-50" for="Sp. Attack">Sp. Attack:</label>
-                    <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" />
-                    <label class="w-50" for="Sp. Defense">Sp. Defense:</label>
-                    <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" />
-                    <label class="w-50" for="Speed">Speed:</label>
-                    <Input type="number" bind:value={pokemon.speed} placeholder="Speed" />
+                    <div>
+                        <label>Slug</label>
+                        <Input bind:value={pokemon.slug} placeholder="Slug" />
+                    </div>
 
+                    <div>
+                        <label>HP</label>
+                        <Input type="number" bind:value={pokemon.hp} placeholder="HP" />
+                    </div>
 
-                    <label class="w-50" for="Height">Height:</label>
-                    <Input type="number" bind:value={pokemon.height} placeholder="Height" />
-                    <label class="w-50" for="Weight">Weight:</label>
-                    <Input type="number" bind:value={pokemon.weight} placeholder="Weight" />
-                    <label class="w-50" for="Base XP">Base XP:</label>
-                    <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" />
+                    <div>
+                        <label>Attack</label>
+                        <Input type="number" bind:value={pokemon.attack} placeholder="Attack" />
+                    </div>
 
-                    <label class="w-50" for="Sprite URL">Sprite URL:</label>
-                    <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" />
-                    <label class="w-50" for="PokeApi Artwork URL">PokeApi Artwork URL:</label>
-                    <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokeApi Artwork URL" />
-                    <label class="w-50" for="Tcgdex Artwork URL">Tcgdex Artwork URL:</label>
-                    <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="Tcgdex Artwork URL" />
-                    <label class="w-50" for="Cry URL">Cry URL:</label>
-                    <Input bind:value={pokemon.cry_url} placeholder="Cry URL" />
+                    <div>
+                        <label>Defense</label>
+                        <Input type="number" bind:value={pokemon.defense} placeholder="Defense" />
+                    </div>
+
+                    <div>
+                        <label>Special Attack</label>
+                        <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" />
+                    </div>
+
+                    <div>
+                        <label>Special Defense</label>
+                        <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" />
+                    </div>
+
+                    <div>
+                        <label>Speed</label>
+                        <Input type="number" bind:value={pokemon.speed} placeholder="Speed" />
+                    </div>
+
+                    <div>
+                        <label>Height</label>
+                        <Input type="number" bind:value={pokemon.height} placeholder="Height" />
+                    </div>
+
+                    <div>
+                        <label>Weight</label>
+                        <Input type="number" bind:value={pokemon.weight} placeholder="Weight" />
+                    </div>
+
+                    <div>
+                        <label>Base Experience</label>
+                        <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" />
+                    </div>
+
+                    <div>
+                        <label>Sprite URL</label>
+                        <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" />
+                    </div>
+
+                    <div>
+                        <label>PokéAPI Artwork URL</label>
+                        <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokéAPI Artwork URL" />
+                    </div>
+
+                    <div>
+                        <label>TCGdex Artwork URL</label>
+                        <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="TCGdex Artwork URL" />
+                    </div>
+
+                    <div>
+                        <label>Cry URL</label>
+                        <Input bind:value={pokemon.cry_url} placeholder="Cry URL" />
+                    </div>
+
                 </div>
 
                 <textarea
                     bind:value={pokemon.description}
                     placeholder="Description"
-                    class="w-full"
+                    class="w-full mt-4"
                 ></textarea>
 
             </CardContent>
         </Card>
 
-        <!-- RAW DATA (OPTIONAL DEBUG) -->
+        <!-- RAW DATA -->
         <Card>
             <CardHeader>
                 <CardTitle>Raw Data</CardTitle>
@@ -243,10 +306,8 @@
 
                 {#if showRaw}
                     <div class="mt-4 space-y-6">
-
                         <JsonTree label="pokeapi" value={pokemon.raw_pokeapi} />
                         <JsonTree label="tcgdex" value={pokemon.raw_tcgdex} />
-
                     </div>
                 {/if}
             </CardContent>

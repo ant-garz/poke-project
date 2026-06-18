@@ -26,29 +26,33 @@ class PokemonManagementController extends Controller
         ]);
     }
 
-    public function syncTcgdex(
-        Pokemon $pokemon,
-        SyncFromTcgdex $action
-    ) {
-        $action->execute($pokemon->id);
+    public function syncTcgdex(Pokemon $pokemon)
+    {
+        $pokemon->update([
+            'tcgdex_sync_status' => 'queued',
+        ]);
+
+        \App\Jobs\FetchTcgdexDataJob::dispatch($pokemon->id);
 
         return response()->json([
-            'message' => 'TCGdex sync completed',
-            'pokemon_id' => $pokemon->id
+            'message' => 'TCGdex sync started',
+            'pokemon_id' => $pokemon->id,
+            'status' => 'queued'
         ]);
     }
 
     public function syncAll(
         Pokemon $pokemon,
-        SyncFromPokeApi $pokeApi,
-        SyncFromTcgdex $tcg
+        SyncFromPokeApi $pokeApi
     ) {
         $pokeApi->execute($pokemon->id);
-        $tcg->execute($pokemon->id);
+
+        \App\Jobs\FetchTcgdexDataJob::dispatch($pokemon->id);
 
         return response()->json([
-            'message' => 'Full sync completed',
-            'pokemon_id' => $pokemon->id
+            'message' => 'Full sync started',
+            'pokemon_id' => $pokemon->id,
+            'status' => 'processing'
         ]);
     }
 
