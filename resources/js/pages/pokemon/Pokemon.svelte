@@ -16,8 +16,14 @@
     import Skeleton from '@/components/ui/skeleton/Skeleton.svelte';
 
     import JsonTree from '@/components/JsonTree.svelte';
+    import { formatHeight, formatWeight } from '@/lib/pokemon-units';
+
 
     let pokemon = $state<any>(null);
+
+    const height = $derived(pokemon ? formatHeight(pokemon.height) : null);
+    const weight  = $derived(pokemon ? formatWeight(pokemon.weight) : null);
+
     let loading = $state(true);
     let showRawJson = $state(false);
 
@@ -135,7 +141,9 @@
                                         Height
                                     </div>
                                     <div class="text-lg font-semibold">
-                                        {pokemon.height}
+                                        {#if height}
+                                            Height: {height.meters} ({height.feet})       
+                                        {/if}
                                     </div>
                                 </div>
 
@@ -144,7 +152,9 @@
                                         Weight
                                     </div>
                                     <div class="text-lg font-semibold">
-                                        {pokemon.weight}
+                                       {#if weight}
+                                        Weight: {weight.kg} ({weight.lbs})       
+                                        {/if}
                                     </div>
                                 </div>
 
