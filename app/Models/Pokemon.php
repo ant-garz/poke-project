@@ -45,11 +45,14 @@ class Pokemon extends Model
         'source_pokeapi_synced_at',
         'source_tcgdex_synced_at',
 
+        'tcgdex_sync_status',
+        'tcg_sync_started_at',
+
         'primary_type_id',
         'secondary_type_id',
 
         'raw_pokeapi',
-        'raw_tcgdex'
+        'raw_tcgdex',
     ];
 
     protected static function booted()
@@ -73,10 +76,6 @@ class Pokemon extends Model
             'raw_tcgdex' => 'array',
         ];
     }
-
-    protected $appends = [
-        'official_artwork_url',
-    ];
 
     protected $hidden = [
         'raw_pokeapi',
@@ -144,11 +143,6 @@ class Pokemon extends Model
     public function cards()
     {
         return $this->morphMany(Card::class, 'cardable');
-    }
-
-    public function getOfficialArtworkUrlAttribute(): ?string
-    {
-        return $this->pokeapi_artwork_url;
     }
 
     public function getTcgdexArtworkUrlAttribute(): ?string

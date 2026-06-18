@@ -41,7 +41,8 @@ class PokemonFactory extends Factory
             'raw_tcgdex' => null,
 
             'sprite_url' => null,
-            'artwork_url' => null,
+            'pokeapi_artwork_url',
+            'tcgdex_artwork_base_url',
             'cry_url' => null,
         ];
     }

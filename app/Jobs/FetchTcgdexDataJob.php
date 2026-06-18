@@ -5,8 +5,11 @@ namespace App\Jobs;
 use App\Models\Pokemon;
 use App\Services\ExternalApi\TcgdexClient;
 use App\Jobs\ProcessTcgdexCardBatchJob;
+use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class FetchTcgdexDataJob implements ShouldQueue
@@ -23,6 +26,7 @@ class FetchTcgdexDataJob implements ShouldQueue
     {
         $pokemon = Pokemon::findOrFail($this->pokemonId);
 
+        // mark as processing (start state)
         $pokemon->update([
             'tcgdex_sync_status' => 'processing',
             'tcg_sync_started_at' => now(),
@@ -44,36 +48,50 @@ class FetchTcgdexDataJob implements ShouldQueue
             ->values()
             ->all();
 
-        foreach (array_chunk($ids, 10) as $chunk) {
-            ProcessTcgdexCardBatchJob::dispatch(
+        $chunks = array_chunk($ids, 10);
+
+        $jobs = collect($chunks)->map(function ($chunk) use ($pokemon) {
+            return new ProcessTcgdexCardBatchJob(
                 $pokemon->id,
                 $chunk
             );
-        }
+        });
 
-        \Log::info('TCGdex job dispatched', [
-            'pokemon_id' => $pokemon->id,
-            'total_cards' => count($ids),
-            'chunks' => count(array_chunk($ids, 10)),
-        ]);
-
-        // IMPORTANT:
-        // still processing until batch jobs finish
-        $pokemon->update([
-            'tcgdex_sync_status' => 'processing',
-        ]);
+        Bus::batch($jobs)
+            ->name("tcgdex-sync-pokemon-{$pokemon->id}")
+            ->then(function (Batch $batch) use ($pokemon) {
+                    \Log::info('TCGdex status', [
+                        'pokemon_id' => $pokemon->id,
+                        'status' => 'completed',
+                    ]);
+                $pokemon->update([
+                    'tcgdex_sync_status' => 'completed',
+                    'source_tcgdex_synced_at' => now(),
+                ]);
+            })
+            ->catch(function (Batch $batch, Throwable $e) use ($pokemon) {
+                \Log::error('TCGdex status', [
+                    'pokemon_id' => $pokemon->id,
+                    'status' => 'failed',
+                    'error' => $e->getMessage(),
+                ]);
+                $pokemon->update([
+                    'tcgdex_sync_status' => 'failed',
+                ]);
+            })
+            ->dispatch();
     }
 
     public function failed(Throwable $e): void
     {
+
+        Log::error('Failed FetchTcgdexDataJob', [
+            'pokemon_id' => $this->pokemonId,
+            'error' => $e->getMessage(),
+        ]);
         Pokemon::where('id', $this->pokemonId)
             ->update([
                 'tcgdex_sync_status' => 'failed',
             ]);
-
-        \Log::error('TCGdex job failed', [
-            'pokemon_id' => $this->pokemonId,
-            'error' => $e->getMessage(),
-        ]);
     }
 }

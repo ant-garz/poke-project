@@ -359,7 +359,7 @@
 
                                                     {#if card.raw_data.pricing.tcgplayer.normal}
                                                         <div class="text-muted-foreground">
-                                                            Normal:
+                                                            <p>Normal:</p>
                                                             low {formatMoney(card.raw_data.pricing.tcgplayer.normal.lowPrice, card.raw_data.pricing.tcgplayer.unit)}
                                                             mid {formatMoney(card.raw_data.pricing.tcgplayer.normal.midPrice, card.raw_data.pricing.tcgplayer.unit)}
                                                             high {formatMoney(card.raw_data.pricing.tcgplayer.normal.highPrice, card.raw_data.pricing.tcgplayer.unit)}
@@ -369,7 +369,7 @@
 
                                                     {#if card.raw_data.pricing.tcgplayer["reverse-holofoil"]}
                                                         <div class="text-muted-foreground mt-1">
-                                                            Reverse holo:
+                                                            <p>Reverse holo:</p>
                                                             low {formatMoney(card.raw_data.pricing.tcgplayer["reverse-holofoil"].lowPrice, card.raw_data.pricing.tcgplayer.unit)}
                                                             mid {formatMoney(card.raw_data.pricing.tcgplayer["reverse-holofoil"].midPrice, card.raw_data.pricing.tcgplayer.unit)}
                                                             market {formatMoney(card.raw_data.pricing.tcgplayer["reverse-holofoil"].marketPrice, card.raw_data.pricing.tcgplayer.unit)}
@@ -386,6 +386,7 @@
                                                     </div>
 
                                                     <div class="text-muted-foreground">
+                                                        <p>Normal:</p>
                                                         avg {formatMoney(card.raw_data.pricing.cardmarket.avg, card.raw_data.pricing.cardmarket.unit)}
                                                         low {formatMoney(card.raw_data.pricing.cardmarket.low, card.raw_data.pricing.cardmarket.unit)}
                                                         trend {formatMoney(card.raw_data.pricing.cardmarket.trend, card.raw_data.pricing.cardmarket.unit)}
@@ -393,9 +394,10 @@
 
                                                     {#if card.raw_data.pricing.cardmarket["avg-holo"]}
                                                         <div class="text-muted-foreground mt-1">
-                                                            · holo avg {formatMoney(card.raw_data.pricing.cardmarket["avg-holo"],card.raw_data.pricing.cardmarket.unit)}
-                                                            · holo low {formatMoney(card.raw_data.pricing.cardmarket["low-holo"],card.raw_data.pricing.cardmarket.unit)}
-                                                            · holo trend {formatMoney(card.raw_data.pricing.cardmarket["trend-holo"],card.raw_data.pricing.cardmarket.unit)}
+                                                            <p>Holo:</p>
+                                                            avg {formatMoney(card.raw_data.pricing.cardmarket["avg-holo"],card.raw_data.pricing.cardmarket.unit)}
+                                                            low {formatMoney(card.raw_data.pricing.cardmarket["low-holo"],card.raw_data.pricing.cardmarket.unit)}
+                                                            trend {formatMoney(card.raw_data.pricing.cardmarket["trend-holo"],card.raw_data.pricing.cardmarket.unit)}
                                                         </div>
                                                     {/if}
                                                 </div>

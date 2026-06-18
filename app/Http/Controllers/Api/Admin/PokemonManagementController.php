@@ -30,6 +30,8 @@ class PokemonManagementController extends Controller
     {
         $pokemon->update([
             'tcgdex_sync_status' => 'queued',
+            'tcg_sync_started_at' => null,
+            'source_tcgdex_synced_at' => null,
         ]);
 
         \App\Jobs\FetchTcgdexDataJob::dispatch($pokemon->id);
@@ -37,7 +39,7 @@ class PokemonManagementController extends Controller
         return response()->json([
             'message' => 'TCGdex sync started',
             'pokemon_id' => $pokemon->id,
-            'status' => 'queued'
+            'status' => 'queued',
         ]);
     }
 
@@ -52,7 +54,16 @@ class PokemonManagementController extends Controller
         return response()->json([
             'message' => 'Full sync started',
             'pokemon_id' => $pokemon->id,
-            'status' => 'processing'
+            'status' => $pokemon->fresh()->tcgdex_sync_status,
+        ]);
+    }
+
+    public function syncStatus(Pokemon $pokemon)
+    {
+        return response()->json([
+            'pokemon_id' => $pokemon->id,
+            'tcgdex_sync_status' => $pokemon->tcgdex_sync_status,
+            'tcg_sync_started_at' => $pokemon->tcg_sync_started_at,
         ]);
     }
 

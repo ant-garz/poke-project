@@ -28,12 +28,16 @@
     let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     // -----------------------------
-    // UI HELPERS
+    // DERIVED STATE (IMPORTANT FIX)
     // -----------------------------
-    function playAudio() {
-        audioEl.play().catch(console.error);
-    }
+    const isSyncing = $derived(
+        pokemon?.tcgdex_sync_status === 'queued' ||
+        pokemon?.tcgdex_sync_status === 'processing'
+    );
 
+    // -----------------------------
+    // HELPERS
+    // -----------------------------
     function getStatusStyle(status: string) {
         switch (status) {
             case 'idle':
@@ -56,15 +60,17 @@
     }
 
     // -----------------------------
-    // POLLING CONTROL
+    // POLLING
     // -----------------------------
     function startPolling() {
+        console.log('start poll')
         if (pollInterval) return;
-
         pollInterval = setInterval(fetchPokemon, 3000);
     }
 
     function stopPolling() {
+                console.log('stopPolling ')
+
         if (pollInterval) {
             clearInterval(pollInterval);
             pollInterval = null;
@@ -72,7 +78,7 @@
     }
 
     // -----------------------------
-    // DATA FETCH
+    // FETCH
     // -----------------------------
     async function fetchPokemon() {
         const res = await fetch(`/api/v1/public/pokemon/${pokemonId}`);
@@ -81,7 +87,6 @@
         pokemon = data;
         loading = false;
 
-        // polling decision is ALWAYS based on fresh API response
         if (isActiveStatus(data.tcgdex_sync_status)) {
             startPolling();
         } else {
@@ -90,9 +95,36 @@
     }
 
     // -----------------------------
+    // SYNC (FIXED RETRY + POLLING)
+    // -----------------------------
+    async function sync(source: 'pokeapi' | 'tcgdex') {
+        saving = true;
+
+        const res = await fetch(
+            `/api/v1/admin/pokemon/${pokemonId}/sync/${source}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );
+
+        await res.json();
+
+        saving = false;
+
+        // ALWAYS refresh from server first
+        await fetchPokemon();
+
+        // FORCE polling start immediately after sync
+        startPolling();
+    }
+
+    // -----------------------------
     // UPDATE
     // -----------------------------
     async function updatePokemon() {
+        if (isSyncing) return;
+
         saving = true;
 
         await fetch(`/api/v1/admin/pokemon/${pokemonId}`, {
@@ -106,27 +138,11 @@
     }
 
     // -----------------------------
-    // SYNC (IMPORTANT FIX)
-    // -----------------------------
-    async function sync(source: 'pokeapi' | 'tcgdex') {
-        saving = true;
-
-        await fetch(`/api/v1/admin/pokemon/${pokemonId}/sync/${source}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        saving = false;
-
-        // 🔥 CRITICAL: force polling immediately after triggering sync
-        await fetchPokemon();
-        startPolling();
-    }
-
-    // -----------------------------
     // DELETE / RESTORE
     // -----------------------------
     async function destroyPokemon() {
+        if (isSyncing) return;
+
         await fetch(`/api/v1/admin/pokemon/${pokemonId}`, {
             method: 'DELETE'
         });
@@ -135,11 +151,17 @@
     }
 
     async function restorePokemon() {
+        if (isSyncing) return;
+
         await fetch(`/api/v1/admin/pokemon/${pokemonId}/restore`, {
             method: 'POST'
         });
 
         await fetchPokemon();
+    }
+
+    function playAudio() {
+        audioEl?.play().catch(console.error);
     }
 
     onMount(fetchPokemon);
@@ -181,23 +203,19 @@
                         <!-- TYPES -->
                         <div class="flex gap-2 flex-wrap">
                             {#if pokemon.primary_type}
-                                <Badge
-                                    style={`background-color:${pokemon.primary_type.color};color:${pokemon.primary_type.text_color}`}
-                                >
+                                <Badge>
                                     {pokemon.primary_type.name}
                                 </Badge>
                             {/if}
 
                             {#if pokemon.secondary_type}
-                                <Badge
-                                    style={`background-color:${pokemon.secondary_type.color};color:${pokemon.secondary_type.text_color}`}
-                                >
+                                <Badge>
                                     {pokemon.secondary_type.name}
                                 </Badge>
                             {/if}
                         </div>
 
-                        <!-- STATUS VISUAL) -->
+                        <!-- STATUS -->
                         <div class="mt-2 text-sm">
                             <span class="text-gray-500">TCGdex status:</span>
                             <span class={`ml-2 px-2 py-1 rounded text-xs font-semibold ${getStatusStyle(pokemon.tcgdex_sync_status)}`}>
@@ -216,21 +234,21 @@
                         <!-- ACTIONS -->
                         <div class="flex gap-2 flex-wrap">
 
-                            <Button disabled={saving} onclick={() => sync('pokeapi')}>
+                            <Button disabled={saving || isSyncing} onclick={() => sync('pokeapi')}>
                                 Sync PokéAPI
                             </Button>
 
-                            <Button disabled={saving} onclick={() => sync('tcgdex')}>
+                            <Button disabled={saving || isSyncing} onclick={() => sync('tcgdex')}>
                                 Sync TCGdex
                             </Button>
 
                             {#if pokemon.deleted_at}
-                                <Button onclick={restorePokemon}>
+                                <Button disabled={isSyncing} onclick={restorePokemon}>
                                     Restore
                                 </Button>
                             {/if}
 
-                            <Button variant="destructive" onclick={destroyPokemon}>
+                            <Button disabled={saving || isSyncing} variant="destructive" onclick={destroyPokemon}>
                                 Delete
                             </Button>
 
@@ -241,15 +259,19 @@
             </CardContent>
         </Card>
 
-        <!-- FORM -->
+        <!-- EDIT FORM -->
         <Card>
             <CardHeader>
                 <CardTitle>Core Pokémon Data</CardTitle>
-                <CardDescription>Editable canonical database fields</CardDescription>
+                <CardDescription>
+                    Editable canonical database fields
+                </CardDescription>
+                <div class="flex gap-2 flex-wrap">
+                    <Button onclick={updatePokemon} disabled={saving} class="mt-2">
+                                Save Changes
+                    </Button>
+                </div>
 
-                <Button onclick={updatePokemon} disabled={saving} class="mt-2">
-                    Save Changes
-                </Button>
             </CardHeader>
 
             <CardContent class="space-y-4">
@@ -258,86 +280,86 @@
 
                     <div>
                         <label>Name</label>
-                        <Input bind:value={pokemon.name} />
+                        <Input bind:value={pokemon.name} placeholder="Name" />
                     </div>
 
                     <div>
                         <label>Slug</label>
-                        <Input bind:value={pokemon.slug} />
+                        <Input bind:value={pokemon.slug} placeholder="Slug" />
                     </div>
 
                     <div>
                         <label>HP</label>
-                        <Input type="number" bind:value={pokemon.hp} />
+                        <Input type="number" bind:value={pokemon.hp} placeholder="HP" />
                     </div>
 
                     <div>
                         <label>Attack</label>
-                        <Input type="number" bind:value={pokemon.attack} />
+                        <Input type="number" bind:value={pokemon.attack} placeholder="Attack" />
                     </div>
 
                     <div>
                         <label>Defense</label>
-                        <Input type="number" bind:value={pokemon.defense} />
+                        <Input type="number" bind:value={pokemon.defense} placeholder="Defense" />
                     </div>
 
                     <div>
                         <label>Special Attack</label>
-                        <Input type="number" bind:value={pokemon.special_attack} />
+                        <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" />
                     </div>
 
                     <div>
                         <label>Special Defense</label>
-                        <Input type="number" bind:value={pokemon.special_defense} />
+                        <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" />
                     </div>
 
                     <div>
                         <label>Speed</label>
-                        <Input type="number" bind:value={pokemon.speed} />
+                        <Input type="number" bind:value={pokemon.speed} placeholder="Speed" />
                     </div>
 
                     <div>
                         <label>Height</label>
-                        <Input type="number" bind:value={pokemon.height} />
+                        <Input type="number" bind:value={pokemon.height} placeholder="Height" />
                     </div>
 
                     <div>
                         <label>Weight</label>
-                        <Input type="number" bind:value={pokemon.weight} />
+                        <Input type="number" bind:value={pokemon.weight} placeholder="Weight" />
                     </div>
 
                     <div>
                         <label>Base Experience</label>
-                        <Input type="number" bind:value={pokemon.base_experience} />
+                        <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" />
                     </div>
 
                     <div>
                         <label>Sprite URL</label>
-                        <Input bind:value={pokemon.sprite_url} />
+                        <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" />
                     </div>
 
                     <div>
-                        <label>PokéAPI Artwork</label>
-                        <Input bind:value={pokemon.pokeapi_artwork_url} />
+                        <label>PokéAPI Artwork URL</label>
+                        <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokéAPI Artwork URL" />
                     </div>
 
                     <div>
-                        <label>TCGdex Artwork</label>
-                        <Input bind:value={pokemon.tcgdex_artwork_base_url} />
+                        <label>TCGdex Artwork URL</label>
+                        <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="TCGdex Artwork URL" />
                     </div>
 
                     <div>
                         <label>Cry URL</label>
-                        <Input bind:value={pokemon.cry_url} />
+                        <Input bind:value={pokemon.cry_url} placeholder="Cry URL" />
                     </div>
 
                 </div>
 
                 <textarea
                     bind:value={pokemon.description}
-                    class="w-full mt-4"
                     placeholder="Description"
-                />
+                    class="w-full mt-4"
+                ></textarea>
 
             </CardContent>
         </Card>

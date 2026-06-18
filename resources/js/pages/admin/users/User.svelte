@@ -76,7 +76,6 @@
             const data = await response.json();
 
             if (!response.ok) {
-                // 🔥 THIS is the key part
                 roleError = 'Failed to update roles';
 
                 if(response.status === 403){

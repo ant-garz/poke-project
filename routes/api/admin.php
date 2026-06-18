@@ -29,6 +29,7 @@ Route::prefix('pokemon')->group(function () {
     Route::post('/{pokemon}/sync/pokeapi', [PokemonManagementController::class, 'syncPokeApi']);
     Route::post('/{pokemon}/sync/tcgdex', [PokemonManagementController::class, 'syncTcgdex']);
     Route::post('/{pokemon}/sync/all', [PokemonManagementController::class, 'syncAll']);
+    Route::get('/{pokemon}/sync-status', [PokemonManagementController::class, 'syncStatus']);
 
     Route::patch('/{pokemon}', [PokemonManagementController::class, 'update']);
     Route::delete('/{pokemon}', [PokemonManagementController::class, 'destroy']);
