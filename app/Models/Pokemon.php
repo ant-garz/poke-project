@@ -55,6 +55,10 @@ class Pokemon extends Model
         'raw_tcgdex',
     ];
 
+    protected $appends = [
+        'padded_pokedex_number'
+    ];
+
     protected static function booted()
     {
         static::creating(function ($pokemon) {

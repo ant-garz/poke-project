@@ -202,7 +202,7 @@
     <CardContent>
         <div class="grid gap-4 md:grid-cols-2">
             <div>Slug: {pokemon.slug}</div>
-            <div>Pokédex #: {pokemon.pokedex_number}</div>
+            <div>Pokédex #: {pokemon.padded_pokedex_number}</div>
             <div>Base XP: {pokemon.base_experience}</div>
             <div>Imported: {new Date(pokemon.source_csv_imported_at).toLocaleString()}</div>
             <div>TCGdex Sync: {new Date(pokemon.source_tcgdex_synced_at).toLocaleString()}</div>
