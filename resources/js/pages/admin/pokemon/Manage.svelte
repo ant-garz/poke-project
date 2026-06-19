@@ -181,7 +181,7 @@
     </Card>
 
     <!-- PAGINATION -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 w-75 mx-auto">
 
         <Button
             onclick={() => meta?.prev_page_url && fetchPokemon(meta.prev_page_url)}

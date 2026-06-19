@@ -200,7 +200,7 @@
     </Card>
 
     <!-- PAGINATION -->
-    <div class="flex items-center gap-2">
+    <div class="flex items-center gap-2 w-75 mx-auto">
 
         <Button
             onclick={() => {
@@ -213,10 +213,7 @@
             Prev
         </Button>
 
-        <span class="text-sm">
-            Page {meta?.current_page} / {meta?.last_page}
-        </span>
-
+        <span class="text-sm">Page {meta?.current_page} / {meta?.last_page}</span>
         <Button
             onclick={() => {
                 if (meta?.next_page_url) {
