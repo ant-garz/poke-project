@@ -322,6 +322,17 @@
                                 </div>
                                 {/if}
 
+                                {#if card.raw_data.pricing.tcgplayer['holofoil']}
+                                <div class="space-y-1 text-muted-foreground mt-2">
+                                <div class="font-medium text-foreground">Holofoil</div>
+                                <div>Low: {formatMoney(card.raw_data.pricing.tcgplayer['holofoil'].lowPrice, 'USD')}</div>
+                                <div>Mid: {formatMoney(card.raw_data.pricing.tcgplayer['holofoil'].midPrice, 'USD')}</div>
+                                <div>High: {formatMoney(card.raw_data.pricing.tcgplayer['holofoil'].highPrice, 'USD')}</div>
+                                <div>Market: {formatMoney(card.raw_data.pricing.tcgplayer['holofoil'].marketPrice, 'USD')}</div>
+                                <div>Direct Low: {formatMoney(card.raw_data.pricing.tcgplayer['holofoil'].directLowPrice, 'USD')}</div>
+                                </div>
+                                {/if}
+
                                 {#if card.raw_data.pricing.tcgplayer['reverse-holofoil']}
                                 <div class="space-y-1 text-muted-foreground mt-2">
                                 <div class="font-medium text-foreground">Reverse Holofoil</div>

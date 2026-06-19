@@ -153,7 +153,7 @@ class SyncFromTcgdex
         if ($card === $pokemon) return true;
 
         $cleanCard = preg_replace(
-            '/^(dark|shining|team rocket\'s|rocket\'s|base|shadow|delta)\s+/i',
+            '/^(dark|shining|team rocket\'s|rocket\'s|base|shadow|delta|ancient)\s+/i',
             '',
             $card
         );
