@@ -24,7 +24,7 @@
 
     let pokemon = $state<any>(null);
 
-    let audioEl;
+    let audioEl = $state<any>(null);
     let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     // -----------------------------
@@ -283,78 +283,78 @@
                 <div class="grid gap-4">
 
                     <div>
-                        <label>Name</label>
-                        <Input bind:value={pokemon.name} placeholder="Name" />
+                        <label  for="name">Name</label>
+                        <Input bind:value={pokemon.name} placeholder="Name" id="name"/>
                     </div>
 
                     <div>
-                        <label>Slug</label>
-                        <Input bind:value={pokemon.slug} placeholder="Slug" />
+                        <label for="slug">Slug</label>
+                        <Input bind:value={pokemon.slug} placeholder="Slug" id="slug" />
                     </div>
 
                     <div>
-                        <label>HP</label>
-                        <Input type="number" bind:value={pokemon.hp} placeholder="HP" />
+                        <label for="hp">HP</label>
+                        <Input type="number" bind:value={pokemon.hp} placeholder="HP" id="hp"/>
                     </div>
 
                     <div>
-                        <label>Attack</label>
-                        <Input type="number" bind:value={pokemon.attack} placeholder="Attack" />
+                        <label for="attack">Attack</label>
+                        <Input type="number" bind:value={pokemon.attack} placeholder="Attack" id="attack"/>
                     </div>
 
                     <div>
-                        <label>Defense</label>
+                        <label for="defense">Defense</label>
                         <Input type="number" bind:value={pokemon.defense} placeholder="Defense" />
                     </div>
 
                     <div>
-                        <label>Special Attack</label>
-                        <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" />
+                        <label for="special_attach">Special Attack</label>
+                        <Input type="number" bind:value={pokemon.special_attack} placeholder="Sp. Attack" id="special_attach"/>
                     </div>
 
                     <div>
-                        <label>Special Defense</label>
-                        <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" />
+                        <label for="special_defense">Special Defense</label>
+                        <Input type="number" bind:value={pokemon.special_defense} placeholder="Sp. Defense" id="special_defense"/>
                     </div>
 
                     <div>
-                        <label>Speed</label>
-                        <Input type="number" bind:value={pokemon.speed} placeholder="Speed" />
+                        <label for="speed">Speed</label>
+                        <Input type="number" bind:value={pokemon.speed} placeholder="Speed" id="speed"/>
                     </div>
 
                     <div>
-                        <label>Height</label>
-                        <Input type="number" bind:value={pokemon.height} placeholder="Height" />
+                        <label for="height">Height</label>
+                        <Input type="number" bind:value={pokemon.height} placeholder="Height" id ="height"/>
                     </div>
 
                     <div>
-                        <label>Weight</label>
-                        <Input type="number" bind:value={pokemon.weight} placeholder="Weight" />
+                        <label for="weight">Weight</label>
+                        <Input type="number" bind:value={pokemon.weight} placeholder="Weight" id ="weight"/>
                     </div>
 
                     <div>
-                        <label>Base Experience</label>
-                        <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" />
+                        <label for="base_experience">Base Experience</label>
+                        <Input type="number" bind:value={pokemon.base_experience} placeholder="Base XP" id="base_experience"/>
                     </div>
 
                     <div>
-                        <label>Sprite URL</label>
-                        <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" />
+                        <label for="sprite_url">Sprite URL</label>
+                        <Input bind:value={pokemon.sprite_url} placeholder="Sprite URL" id="sprite_url"/>
                     </div>
 
                     <div>
-                        <label>PokéAPI Artwork URL</label>
-                        <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokéAPI Artwork URL" />
+                        <label for="poke_api_art_url">PokéAPI Artwork URL</label>
+                        <Input bind:value={pokemon.pokeapi_artwork_url} placeholder="PokéAPI Artwork URL" id="poke_api_art_url"/>
                     </div>
 
                     <div>
-                        <label>TCGdex Artwork URL</label>
-                        <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="TCGdex Artwork URL" />
+                        <label for="tcg_dex_art_url">TCGdex Artwork URL</label>
+                        <Input bind:value={pokemon.tcgdex_artwork_base_url} placeholder="TCGdex Artwork URL" id="tcg_dex_art_url"/>
                     </div>
 
                     <div>
-                        <label>Cry URL</label>
-                        <Input bind:value={pokemon.cry_url} placeholder="Cry URL" />
+                        <label for="cry_url">Cry URL</label>
+                        <Input bind:value={pokemon.cry_url} placeholder="Cry URL" id="cry_url"/>
                     </div>
 
                 </div>

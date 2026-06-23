@@ -56,8 +56,8 @@ Route::middleware(['auth','verified'])->group(function () {
                     ]);
                 })
                 ->name('pokemon.batches.show');
-            })->middleware('permission:manage pokemon');
-        });
+        })->middleware('permission:manage pokemon');
+    });
 });
 
 require __DIR__.'/settings.php';
