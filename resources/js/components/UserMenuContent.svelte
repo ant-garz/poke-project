@@ -2,6 +2,7 @@
     import { Link, router } from '@inertiajs/svelte';
     import LogOut from 'lucide-svelte/icons/log-out';
     import Settings from 'lucide-svelte/icons/settings';
+    import { clearTypesCache } from '@/stores/types';
     import {
         DropdownMenuGroup,
         DropdownMenuItem,
@@ -21,6 +22,7 @@
     } = $props();
 
     function handleLogout(propsOnClick?: () => void) {
+        clearTypesCache();
         return () => {
             propsOnClick?.();
             router.flushAll();

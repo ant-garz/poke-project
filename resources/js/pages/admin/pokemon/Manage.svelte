@@ -35,6 +35,12 @@
 
     let initialLoaded = false;
 
+    function handleKeydown(event) {
+		if (event.key === 'Enter') {
+			fetchPokemon();
+		}
+	}
+
     async function fetchPokemon(url = null) {
         loading = true;
 
@@ -87,6 +93,7 @@
                 <Input
                     placeholder="Search Pokémon..."
                     bind:value={search}
+                    onkeydown={handleKeydown} 
                     class="w-full"
                 />
             </div>

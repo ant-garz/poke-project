@@ -40,6 +40,12 @@
     let page = 1;
     let meta: any = null;
 
+    function handleKeydown(event) {
+		if (event.key === 'Enter') {
+			fetchPokemon();
+		}
+	}
+
     const perPage = 20;
 
     let initialLoaded = false;
@@ -104,6 +110,7 @@
                 <Input
                     placeholder="Search Pokémon..."
                     bind:value={search}
+                    onkeydown={handleKeydown} 
                     class="w-full"
                 />
             </div>
