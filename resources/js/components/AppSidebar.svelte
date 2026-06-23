@@ -3,6 +3,8 @@
     import BookOpen from 'lucide-svelte/icons/book-open';
     import FolderGit2 from 'lucide-svelte/icons/folder-git-2';
     import LayoutGrid from 'lucide-svelte/icons/layout-grid';
+    import ShieldUser  from 'lucide-svelte/icons/shield-user';
+
     import type { Snippet } from 'svelte';
     import AppLogo from '@/components/AppLogo.svelte';
     import NavFooter from '@/components/NavFooter.svelte';
@@ -51,7 +53,7 @@
         {
             title: 'Admin Dashboard',
             href: '/admin',
-            icon: LayoutGrid,
+            icon: ShieldUser,
         },
     ];
 

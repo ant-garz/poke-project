@@ -40,7 +40,7 @@
         "bits-ui": "^2.15.0",
         "clsx": "^2.1.1",
         "laravel-vite-plugin": "^3.0.0",
-        "lucide-svelte": "^0.468.0",
+        "lucide-svelte": "^1.0.1",
         "svelte": "^5.16.0",
         "svelte-sonner": "^0.3.28",
         "tailwind-merge": "^3.2.0",
