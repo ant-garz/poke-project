@@ -2,6 +2,7 @@
     import { dashboard } from '@/routes';
 
     import TypeFilterButton from '@/components/pokemon/TypeFilterButton.svelte';
+    import Search   from 'lucide-svelte/icons/search';
 
     export const layout = {
         breadcrumbs: [
@@ -100,6 +101,7 @@
 
             <Button onclick={() => fetchPokemon()}>
                 Search
+                <Search />
             </Button>
         </div>
 

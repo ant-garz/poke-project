@@ -1,6 +1,7 @@
 <script module lang="ts">
     import { dashboard } from '@/routes';
 
+    import Search   from 'lucide-svelte/icons/search';
     import TypeFilterButton from '@/components/pokemon/TypeFilterButton.svelte';
     import TypeFilterModal from '@/components/pokemon/TypePickerModal.svelte';
 
@@ -117,6 +118,7 @@
 
             <Button onclick={() => fetchPokemon()}>
                 Search
+                <Search />
             </Button>
         </div>
 
