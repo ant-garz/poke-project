@@ -20,7 +20,7 @@
         SidebarMenuItem,
     } from '@/components/ui/sidebar';
     import { toUrl } from '@/lib/utils';
-    import { dashboard } from '@/routes';
+    import { dashboard, home } from '@/routes';
     import type { NavItem } from '@/types';
     import { useAuth } from '@/lib/useAuth';
 
@@ -89,7 +89,7 @@
                     {#snippet children(props)}
                         <Link
                             {...props}
-                            href={toUrl(dashboard())}
+                            href={toUrl(home())}
                             class={props.class}
                         >
                             <AppLogo />
