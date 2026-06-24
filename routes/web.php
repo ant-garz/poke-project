@@ -18,7 +18,7 @@ Route::middleware(['auth','verified'])->group(function () {
     // "manage" is an umbrella permission name to represent full CRUD (Create, Read, Update, Delete) privileges over a specific resource or module
     Route::prefix('admin')
         ->name('admin.')
-        ->middleware(['role:admin','verified'])
+        ->middleware(['role:admin'])
         ->group(function () {
 
             Route::inertia('/', 'admin/Dashboard')
