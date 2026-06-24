@@ -141,35 +141,98 @@ Stores relationships between internal Pokémon records and external systems such
 
 ## Import Pipeline
 
-### Step 1
+The Pokémon import system is fully asynchronous and queue-driven.
 
-Administrator uploads a CSV file.
+### Step 1 — CSV Upload
 
-### Step 2
+An administrator uploads a Pokémon CSV file through the administrative interface.
 
-A batch record is created and tracked.
+A new import batch record is created to track progress and processing statistics.
 
-### Step 3
+### Step 2 — Import Job Dispatch
 
-The import job reads the CSV and dispatches individual row-processing jobs.
+The system dispatches `ImportPokemonCsvJob`.
 
-### Step 4
+This job:
 
-Each row job:
+* Reads the CSV file
+* Calculates total row count
+* Marks the batch as processing
+* Dispatches a `ParsePokemonCsvRowJob` for each row
+* Schedules a batch finalization job
 
-* Creates or updates a Pokémon
-* Resolves types
-* Updates canonical species data
+### Step 3 — Row Processing
+
+Each `ParsePokemonCsvRowJob` processes a single CSV row independently.
+
+The job:
+
+* Validates required CSV fields
+* Creates or updates the Pokémon record
+* Normalizes Pokémon types
+* Assigns primary and secondary type relationships
+* Stores canonical species data
+* Updates import tracking counters
 * Dispatches enrichment jobs
 
-### Step 5
+### Step 4 — External Enrichment
 
-External enrichment jobs:
+After a Pokémon record is created or updated, the system dispatches `EnrichPokemonFromExternalApisJob`.
 
-* Fetch data from PokeAPI
-* Fetch data from TCGDex
-* Store raw API payloads
-* Update enrichment fields
+This orchestrator job triggers external data synchronization from multiple sources:
+
+#### PokeAPI
+
+Used to enrich Pokémon with:
+
+* Species metadata
+* Descriptions
+* Artwork
+* Sprites
+* Cries
+* Physical measurements
+
+#### TCGDex
+
+Used to enrich Pokémon with:
+
+* Trading card records
+* Card artwork
+* Card sets
+* Card attacks
+* Market pricing data
+* Additional card metadata
+
+### Step 5 — TCGDex Card Processing
+
+`FetchTcgdexDataJob` retrieves matching card references from TCGDex.
+
+Card identifiers are chunked into smaller batches and processed asynchronously through `ProcessTcgdexCardBatchJob`.
+
+Each batch job:
+
+* Retrieves complete card payloads
+* Creates or updates card sets
+* Creates or updates cards
+* Rebuilds card attacks
+* Stores pricing information
+* Preserves raw TCGDex payloads
+
+This approach prevents long-running jobs and allows large card collections to be processed safely.
+
+### Step 6 — Import Finalization
+
+`FinalizePokemonImportBatchJob` evaluates import progress using tracked counters.
+
+A batch is considered complete when:
+
+```text
+(processed_rows + failed_rows) >= total_rows
+```
+
+Import completion only reflects CSV ingestion status.
+
+External enrichment jobs may continue running after the import batch itself has been finalized.
 
 ## Queue Processing
 

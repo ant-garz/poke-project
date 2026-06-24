@@ -11,17 +11,49 @@ use App\Enums\PokemonImportBatchStatus;
 use App\Jobs\FinalizePokemonImportBatchJob;
 
 /**
- * This kicks off main workflow
+ * Pokémon import entrypoint.
+ *
+ * Workflow:
+ *
  * ImportPokemonCsvJob
- *  → reads file + dispatches row jobs
- *  ParsePokemonCsvRowJob
- *  → converts raw CSV row → Pokémon DB write/update
- *  EnrichPokemonFromExternalApisJob
- *  → orchestrator job (calls API jobs)
- *  FetchTcgdexDataJob
- *  → returns structured TCGDex data
- *  FetchPokeApiDataJob
- *  → returns structured PokeAPI data
+ * ├─ Reads uploaded CSV file
+ * ├─ Updates batch metadata (status + row count)
+ * ├─ Dispatches ParsePokemonCsvRowJob for each CSV row
+ * └─ Schedules FinalizePokemonImportBatchJob
+ *
+ * ParsePokemonCsvRowJob
+ * ├─ Validates and normalizes CSV data
+ * ├─ Creates or updates Pokémon records
+ * ├─ Creates missing Pokémon types
+ * ├─ Assigns primary / secondary type relations
+ * ├─ Marks CSV import timestamps
+ * └─ Dispatches EnrichPokemonFromExternalApisJob
+ *
+ * EnrichPokemonFromExternalApisJob
+ * ├─ Dispatches FetchPokeApiDataJob
+ * └─ Dispatches FetchTcgdexDataJob
+ *
+ * FetchPokeApiDataJob
+ * └─ Synchronizes Pokémon metadata from PokéAPI
+ *
+ * FetchTcgdexDataJob
+ * ├─ Marks TCGdex sync as processing
+ * ├─ Retrieves matching card IDs from TCGdex
+ * ├─ Chunks card IDs into batches
+ * └─ Dispatches ProcessTcgdexCardBatchJob jobs
+ *
+ * ProcessTcgdexCardBatchJob
+ * ├─ Retrieves full card payloads
+ * ├─ Upserts card sets
+ * ├─ Upserts cards
+ * ├─ Rebuilds card attacks
+ * └─ Stores pricing and raw TCGdex metadata
+ *
+ * Notes:
+ * - All external API operations are asynchronous.
+ * - CSV import completion only tracks row processing.
+ * - Pokémon enrichment continues independently after import completion.
+ * - TCGdex card synchronization uses queue batches for scalability.
  */
 
 class ImportPokemonCsvJob implements ShouldQueue
